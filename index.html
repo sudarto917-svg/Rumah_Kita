@@ -18,14 +18,40 @@
         .toast-enter-active { transform: translateX(0); opacity: 1; transition: all 0.3s ease-out; }
         .toast-exit-active { transform: translateX(100%); opacity: 0; transition: all 0.3s ease-in; }
 
-        /* Print Specifics */
+        /* --- LOGIKA PENCETAKAN (PRINT) YANG DIPERBAIKI --- */
         @media print {
+            /* Sembunyikan semua elemen body secara default saat print */
             body * { visibility: hidden; }
-            #print-area, #print-area * { visibility: visible; }
-            #print-area { position: absolute; left: 0; top: 0; width: 100%; display: block !important; }
-            
-            #report-print-area, #report-print-area * { visibility: visible; }
-            #report-print-area { position: absolute; left: 0; top: 0; width: 100%; display: block !important; }
+
+            /* MODE 1: CETAK STRUK (RECEIPT) */
+            /* Hanya tampilkan #print-area jika body punya class 'printing-receipt' */
+            body.printing-receipt #print-area, 
+            body.printing-receipt #print-area * { 
+                visibility: visible; 
+            }
+            body.printing-receipt #print-area {
+                position: absolute; 
+                left: 0; 
+                top: 0; 
+                width: 100%; 
+                display: block !important;
+                margin: 0;
+                padding: 0;
+            }
+
+            /* MODE 2: CETAK LAPORAN (REPORT) */
+            /* Hanya tampilkan #report-print-area jika body punya class 'printing-report' */
+            body.printing-report #report-print-area, 
+            body.printing-report #report-print-area * { 
+                visibility: visible; 
+            }
+            body.printing-report #report-print-area {
+                position: absolute; 
+                left: 0; 
+                top: 0; 
+                width: 100%; 
+                display: block !important;
+            }
         }
     </style>
 </head>
@@ -303,47 +329,66 @@
         </div>
     </div>
 
-    <!-- Receipt Print Template -->
+    <!-- Receipt Print Template (STRUK BELANJA) -->
     <div id="print-area" class="hidden bg-white p-2 font-mono text-[10px] text-black w-[250px]">
-        <div class="text-center mb-2 border-b border-dashed border-black pb-2">
-            <h2 class="font-bold text-sm">RUMAH KITA</h2>
-            <p id="print-time">-</p>
+        <div class="text-center mb-3 border-b border-dashed border-black pb-2">
+            <h2 class="font-bold text-sm">OUTLET RUMAH KITA</h2>
+            <p class="text-[9px]">Jl. Contoh Desa No. 123</p>
+            <p id="print-time" class="mt-1 text-[9px]">-</p>
         </div>
-        <div class="text-center text-xl font-bold mb-2" id="print-queue">Q-000</div>
-        <div class="text-center mb-2 font-bold text-xs" id="print-name">PELANGGAN: -</div>
-        <div id="print-items" class="mb-2"></div>
-        <div class="border-t border-dashed border-black pt-2">
+        <div class="mb-3 pb-2 border-b border-dashed border-black">
+            <div class="flex justify-between"><span>Kode:</span><span class="font-bold" id="print-queue">Q-000</span></div>
+            <div class="flex justify-between"><span>Plg:</span><span id="print-name" class="uppercase font-bold">-</span></div>
+            <div class="flex justify-between"><span>Tipe:</span><span id="print-type">-</span></div>
+        </div>
+        
+        <!-- Rincian Belanja -->
+        <div id="print-items" class="mb-3">
+            <!-- Items injected here -->
+        </div>
+        
+        <div class="border-t border-dashed border-black pt-2 space-y-1">
+            <div class="flex justify-between"><span>Subtotal</span><span id="print-subtotal">0</span></div>
             <div class="flex justify-between"><span>Ongkir</span><span id="print-fee">0</span></div>
-            <div class="flex justify-between font-bold"><span>TOTAL</span><span id="print-total">0</span></div>
+            <div class="flex justify-between font-bold text-sm pt-1 border-t border-dotted border-gray-400 mt-1">
+                <span>TOTAL</span>
+                <span id="print-total">0</span>
+            </div>
         </div>
-        <div class="text-center mt-2 pt-2 border-t border-black">Terima Kasih!</div>
+        <div class="text-center mt-4 pt-2 border-t border-black">
+            <p>Terima Kasih!</p>
+            <p class="text-[8px] mt-1">Simpan struk ini sebagai bukti pembayaran.</p>
+        </div>
     </div>
 
-    <!-- Report Print Template -->
-    <div id="report-print-area" class="hidden bg-white p-8 text-black font-sans">
-        <div class="text-center mb-6 border-b-2 border-black pb-4">
-            <h1 class="text-2xl font-bold uppercase">Laporan Penjualan</h1>
-            <h2 class="text-lg">Outlet Rumah Kita</h2>
-            <p id="print-report-date" class="text-sm text-gray-600 mt-1">Periode: -</p>
+    <!-- Report Print Template (LAPORAN) -->
+    <div id="report-print-area" class="hidden bg-white p-10 text-black font-sans">
+        <div class="text-center mb-8 border-b-2 border-black pb-4">
+            <h1 class="text-3xl font-bold uppercase">Laporan Penjualan</h1>
+            <h2 class="text-xl mt-2">Outlet Rumah Kita</h2>
+            <p id="print-report-date" class="text-md text-gray-600 mt-2">Periode: -</p>
         </div>
         <table class="w-full text-left border-collapse">
             <thead>
-                <tr class="border-b-2 border-black">
-                    <th class="py-2">Tanggal / Periode</th>
-                    <th class="py-2 text-right">Jumlah Transaksi</th>
-                    <th class="py-2 text-right">Total Omzet</th>
+                <tr class="border-b-2 border-black bg-gray-50">
+                    <th class="py-3 px-2">Tanggal / Periode</th>
+                    <th class="py-3 px-2 text-right">Jumlah Transaksi</th>
+                    <th class="py-3 px-2 text-right">Total Omzet</th>
                 </tr>
             </thead>
             <tbody id="print-report-body"></tbody>
             <tfoot>
-                <tr class="border-t-2 border-black font-bold text-lg">
-                    <td class="py-4">TOTAL</td>
-                    <td class="py-4 text-right" id="print-report-count">0</td>
-                    <td class="py-4 text-right" id="print-report-revenue">0</td>
+                <tr class="border-t-2 border-black font-bold text-xl bg-gray-50">
+                    <td class="py-4 px-2">TOTAL KESELURUHAN</td>
+                    <td class="py-4 px-2 text-right" id="print-report-count">0</td>
+                    <td class="py-4 px-2 text-right" id="print-report-revenue">0</td>
                 </tr>
             </tfoot>
         </table>
-        <div class="mt-8 text-sm text-gray-500 text-center">Dicetak pada: <span id="print-timestamp"></span></div>
+        <div class="mt-12 text-sm text-gray-500 text-center border-t pt-4 w-64 mx-auto">
+            <p>Dicetak pada: <span id="print-timestamp"></span></p>
+            <p>Admin Outlet Rumah Kita</p>
+        </div>
     </div>
 
     <script type="module">
@@ -359,7 +404,7 @@
             el.innerHTML = `<div>${type==='success'?'<i class="fas fa-check"></i>':'<i class="fas fa-info"></i>'}</div><div class="flex-1">${msg}</div>`;
             container.appendChild(el);
             requestAnimationFrame(() => { el.classList.remove('toast-enter'); el.classList.add('toast-enter-active'); });
-            setTimeout(() => el.remove(), 3000);
+            setTimeout(() => { el.classList.remove('toast-enter-active'); el.classList.add('toast-exit-active'); setTimeout(() => el.remove(), 300); }, duration = 3000);
         }
 
         function generateQueueCode() {
@@ -495,7 +540,9 @@
             window.currentReportTotals = { count: totalC, revenue: totalR };
         }
 
+        // --- FUNGSI CETAK LAPORAN (MODE REPORT) ---
         window.printReport = () => {
+            // 1. Isi data
             const rows = window.currentReportData || [];
             const totals = window.currentReportTotals || {count:0, revenue:0};
             const dateTitle = reportMode === 'daily' ? "Laporan Harian" : "Laporan Bulanan";
@@ -507,9 +554,9 @@
                     : new Date(r.key + '-01').toLocaleDateString('id-ID', {month:'long', year:'numeric'});
                 return `
                     <tr class="border-b border-gray-200">
-                        <td class="py-2">${displayDate}</td>
-                        <td class="py-2 text-right">${r.count}</td>
-                        <td class="py-2 text-right">Rp ${r.revenue.toLocaleString()}</td>
+                        <td class="py-3 px-2">${displayDate}</td>
+                        <td class="py-3 px-2 text-right">${r.count}</td>
+                        <td class="py-3 px-2 text-right">Rp ${r.revenue.toLocaleString()}</td>
                     </tr>
                 `;
             }).join('');
@@ -518,7 +565,15 @@
             document.getElementById('print-report-revenue').textContent = 'Rp ' + totals.revenue.toLocaleString();
             document.getElementById('print-timestamp').textContent = new Date().toLocaleString('id-ID');
             
+            // 2. Aktifkan Mode Cetak Laporan
+            document.body.classList.remove('printing-receipt');
+            document.body.classList.add('printing-report');
+
+            // 3. Print
             window.print();
+
+            // 4. Bersihkan class (opsional, agar tampilan kembali normal jika browser tidak reload)
+            setTimeout(() => document.body.classList.remove('printing-report'), 500);
         }
 
         function updateDashboardStats(accepted) {
@@ -613,19 +668,6 @@
             renderAcceptedOrders(orders);
         });
 
-        // --- CASHIER ---
-        function renderCashierGrid() {
-            const search = document.getElementById('cashier-search').value.toLowerCase();
-            const filtered = allMenu.filter(m => m.name.toLowerCase().includes(search));
-            document.getElementById('cashier-grid').innerHTML = filtered.map(item => `
-                <div onclick="window.addToCashierCart('${item.id}')" class="bg-white p-3 rounded-xl border border-slate-100 cursor-pointer hover:border-orange-400 transition group shadow-sm">
-                    <div class="h-24 w-full bg-slate-50 rounded-lg mb-2 overflow-hidden"><img src="${item.imageUrl || `https://placehold.co/200x200?text=${item.name.charAt(0)}`}" class="w-full h-full object-cover"></div>
-                    <h4 class="font-bold text-sm text-slate-800 truncate">${item.name}</h4>
-                    <p class="text-orange-600 text-sm font-bold">Rp ${parseInt(item.price).toLocaleString()}</p>
-                </div>
-            `).join('');
-        }
-
         // --- GLOBAL ACTIONS ---
         window.confirmOrder = async (id, phone, name, code) => {
             if(!confirm(`Terima pesanan ${code}?`)) return;
@@ -669,14 +711,39 @@
             } catch(e) { showToast("Gagal: " + e.code, 'error'); }
         }
 
+        // --- FUNGSI CETAK STRUK (MODE RECEIPT) ---
         window.printOrder = (o) => {
+            // 1. Isi Data Struk
             document.getElementById('print-queue').textContent = o.queueCode;
-            document.getElementById('print-name').textContent = "PELANGGAN: " + (o.customerName || 'NONAME').toUpperCase();
-            document.getElementById('print-items').innerHTML = o.items.map(i => `<div class="flex justify-between mb-1"><span>${i.qty} ${i.name}</span><span>${(i.price*i.qty).toLocaleString()}</span></div>`).join('');
+            document.getElementById('print-name').textContent = (o.customerName || 'NONAME');
+            document.getElementById('print-type').textContent = (o.type || 'ONLINE').toUpperCase();
+            document.getElementById('print-time').textContent = new Date(o.timestamp.seconds*1000).toLocaleString('id-ID');
+            
+            // Rincian Belanja yang Detail
+            document.getElementById('print-items').innerHTML = o.items.map(i => `
+                <div class="mb-1 text-[9px]">
+                    <div class="font-bold">${i.name}</div>
+                    <div class="flex justify-between">
+                        <span>${i.qty} x ${parseInt(i.price).toLocaleString()}</span>
+                        <span>${(i.price*i.qty).toLocaleString()}</span>
+                    </div>
+                </div>
+            `).join('');
+            
+            const subtotal = o.total - (o.deliveryFee || 0);
+            document.getElementById('print-subtotal').textContent = subtotal.toLocaleString();
             document.getElementById('print-fee').textContent = (o.deliveryFee||0).toLocaleString();
             document.getElementById('print-total').textContent = parseInt(o.total).toLocaleString();
-            document.getElementById('print-time').textContent = new Date(o.timestamp.seconds*1000).toLocaleString('id-ID');
+            
+            // 2. Aktifkan Mode Cetak Struk
+            document.body.classList.remove('printing-report');
+            document.body.classList.add('printing-receipt');
+
+            // 3. Print
             window.print();
+
+            // 4. Bersihkan class
+            setTimeout(() => document.body.classList.remove('printing-receipt'), 500);
         }
 
         document.getElementById('cashier-search').addEventListener('input', renderCashierGrid);
