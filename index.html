@@ -404,7 +404,7 @@
             el.innerHTML = `<div>${type==='success'?'<i class="fas fa-check"></i>':'<i class="fas fa-info"></i>'}</div><div class="flex-1">${msg}</div>`;
             container.appendChild(el);
             requestAnimationFrame(() => { el.classList.remove('toast-enter'); el.classList.add('toast-enter-active'); });
-            setTimeout(() => { el.classList.remove('toast-enter-active'); el.classList.add('toast-exit-active'); setTimeout(() => el.remove(), 300); }, duration = 3000);
+            setTimeout(() => { el.classList.remove('toast-enter-active'); el.classList.add('toast-exit-active'); setTimeout(() => el.remove(), 300); }, 3000);
         }
 
         function generateQueueCode() {
