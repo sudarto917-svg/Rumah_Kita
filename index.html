@@ -17,6 +17,16 @@
         .toast-enter { transform: translateX(100%); opacity: 0; }
         .toast-enter-active { transform: translateX(0); opacity: 1; transition: all 0.3s ease-out; }
         .toast-exit-active { transform: translateX(100%); opacity: 0; transition: all 0.3s ease-in; }
+
+        /* Print Specifics */
+        @media print {
+            body * { visibility: hidden; }
+            #print-area, #print-area * { visibility: visible; }
+            #print-area { position: absolute; left: 0; top: 0; width: 100%; display: block !important; }
+            
+            #report-print-area, #report-print-area * { visibility: visible; }
+            #report-print-area { position: absolute; left: 0; top: 0; width: 100%; display: block !important; }
+        }
     </style>
 </head>
 <body class="text-slate-800 h-screen flex overflow-hidden bg-slate-50">
@@ -38,18 +48,25 @@
         </div>
 
         <nav class="flex-1 overflow-y-auto py-4 space-y-1 px-3">
+            <!-- Dashboard -->
             <button onclick="switchTab('dashboard')" class="nav-item w-full text-left px-4 py-3 rounded-xl hover:bg-white/10 transition flex items-center gap-3 text-slate-300" id="nav-dashboard">
-                <i class="fas fa-chart-pie w-5"></i> Dashboard & Menu
+                <i class="fas fa-chart-pie w-5"></i> Dashboard & Laporan
             </button>
+            
+            <!-- Pesanan Masuk (Pending) -->
             <button onclick="switchTab('incoming')" class="nav-item w-full text-left px-4 py-3 rounded-xl hover:bg-white/10 transition flex items-center gap-3 text-slate-300 relative" id="nav-incoming">
                 <i class="fas fa-bell w-5"></i> Pesanan Masuk
                 <span id="notif-badge" class="hidden absolute right-3 bg-rose-500 text-white text-[10px] px-2 py-0.5 rounded-full animate-pulse">0</span>
             </button>
+
+            <!-- Pesanan Diterima (Confirmed/History) -->
+            <button onclick="switchTab('accepted')" class="nav-item w-full text-left px-4 py-3 rounded-xl hover:bg-white/10 transition flex items-center gap-3 text-slate-300" id="nav-accepted">
+                <i class="fas fa-clipboard-check w-5"></i> Pesanan Diterima
+            </button>
+            
+            <!-- Kasir -->
             <button onclick="switchTab('cashier')" class="nav-item w-full text-left px-4 py-3 rounded-xl hover:bg-white/10 transition flex items-center gap-3 text-slate-300" id="nav-cashier">
                 <i class="fas fa-cash-register w-5"></i> Kasir (POS)
-            </button>
-            <button onclick="switchTab('history')" class="nav-item w-full text-left px-4 py-3 rounded-xl hover:bg-white/10 transition flex items-center gap-3 text-slate-300" id="nav-history">
-                <i class="fas fa-file-invoice w-5"></i> Laporan
             </button>
         </nav>
 
@@ -85,37 +102,84 @@
 
         <div class="flex-1 overflow-y-auto p-4 md:p-8 relative scroll-smooth bg-slate-50" id="content-area">
             
-            <!-- 1. Dashboard & Menu -->
-            <div id="view-dashboard" class="view-section space-y-6">
+            <!-- 1. DASHBOARD & LAPORAN -->
+            <div id="view-dashboard" class="view-section space-y-8">
+                <!-- Quick Stats -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-                    <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
-                        <p class="text-slate-500 text-xs uppercase font-bold mb-1">Pendapatan Hari Ini</p>
+                    <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm border-l-4 border-l-emerald-500">
+                        <p class="text-slate-500 text-xs uppercase font-bold mb-1">Omzet Hari Ini</p>
                         <h3 class="text-2xl md:text-3xl font-bold text-slate-800" id="daily-revenue">Rp 0</h3>
                     </div>
-                    <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
-                        <p class="text-slate-500 text-xs uppercase font-bold mb-1">Total Pesanan Hari Ini</p>
+                    <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm border-l-4 border-l-blue-500">
+                        <p class="text-slate-500 text-xs uppercase font-bold mb-1">Transaksi Hari Ini</p>
                         <h3 class="text-2xl md:text-3xl font-bold text-slate-800" id="daily-orders">0</h3>
                     </div>
-                    <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
+                    <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm border-l-4 border-l-orange-500">
                         <p class="text-slate-500 text-xs uppercase font-bold mb-1">Total Menu Aktif</p>
                         <h3 class="text-2xl md:text-3xl font-bold text-slate-800" id="total-menu">0</h3>
                     </div>
                 </div>
 
+                <!-- Laporan Section -->
+                <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+                    <div class="p-6 border-b border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4">
+                        <div>
+                            <h3 class="text-lg font-bold text-slate-800">Laporan Penjualan</h3>
+                            <p class="text-sm text-slate-500">Rekapitulasi data transaksi sukses.</p>
+                        </div>
+                        <div class="flex bg-slate-100 p-1 rounded-lg">
+                            <button onclick="setReportMode('daily')" id="btn-report-daily" class="px-4 py-1.5 rounded-md text-sm font-bold transition bg-white text-slate-800 shadow-sm">Harian</button>
+                            <button onclick="setReportMode('monthly')" id="btn-report-monthly" class="px-4 py-1.5 rounded-md text-sm font-bold transition text-slate-500 hover:text-slate-800">Bulanan</button>
+                        </div>
+                    </div>
+                    
+                    <div class="p-6">
+                        <!-- Filter Date -->
+                        <div class="flex gap-2 mb-4">
+                            <input type="date" id="report-date" class="border rounded-lg px-3 py-2 text-sm outline-none focus:border-orange-500 bg-slate-50">
+                            <button onclick="printReport()" class="bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-black flex items-center gap-2">
+                                <i class="fas fa-print"></i> Cetak Laporan
+                            </button>
+                        </div>
+
+                        <div class="overflow-x-auto border rounded-xl">
+                            <table class="w-full text-left text-sm">
+                                <thead class="bg-slate-50 text-slate-500 font-semibold uppercase text-xs">
+                                    <tr>
+                                        <th class="p-4" id="report-col-1">Tanggal</th>
+                                        <th class="p-4">Jumlah Pesanan</th>
+                                        <th class="p-4">Total Omzet</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="report-table-body" class="divide-y divide-slate-100">
+                                    <!-- Data Injected Here -->
+                                </tbody>
+                                <tfoot class="bg-slate-50 font-bold">
+                                    <tr>
+                                        <td class="p-4">TOTAL</td>
+                                        <td class="p-4" id="report-total-count">0</td>
+                                        <td class="p-4 text-emerald-600" id="report-total-revenue">Rp 0</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Menu Management (Minimized) -->
                 <div class="bg-white rounded-2xl border border-slate-100 shadow-sm">
                     <div class="p-6 border-b border-slate-100 flex justify-between items-center">
                         <h3 class="text-lg font-bold text-slate-800">Daftar Menu</h3>
                         <button onclick="toggleModal('add-menu-modal')" class="bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-black transition flex items-center gap-2">
-                            <i class="fas fa-plus"></i> Tambah Menu
+                            <i class="fas fa-plus"></i> Tambah
                         </button>
                     </div>
-                    <div class="overflow-x-auto">
+                    <div class="overflow-x-auto max-h-64">
                         <table class="w-full text-left text-sm">
-                            <thead class="bg-slate-50 text-slate-500 font-semibold uppercase text-xs">
+                            <thead class="bg-slate-50 text-slate-500 font-semibold uppercase text-xs sticky top-0 z-10">
                                 <tr>
                                     <th class="p-4 pl-6">Gambar</th>
                                     <th class="p-4">Produk</th>
-                                    <th class="p-4">Kategori</th>
                                     <th class="p-4">Harga</th>
                                     <th class="p-4 text-center">Aksi</th>
                                 </tr>
@@ -126,13 +190,13 @@
                 </div>
             </div>
 
-            <!-- 2. Incoming Orders -->
+            <!-- 2. PESANAN MASUK (PENDING) -->
             <div id="view-incoming" class="view-section hidden space-y-6">
                  <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-4 flex gap-3 items-start">
                     <i class="fas fa-info-circle text-indigo-500 mt-1"></i>
                     <div>
-                        <h4 class="font-bold text-indigo-900 text-sm">Konfirmasi Pembayaran</h4>
-                        <p class="text-xs text-indigo-700 mt-1">Klik "Terima" untuk otomatis mengirim WA konfirmasi ke pelanggan.</p>
+                        <h4 class="font-bold text-indigo-900 text-sm">Pesanan Baru</h4>
+                        <p class="text-xs text-indigo-700 mt-1">Harap konfirmasi pembayaran sebelum memasak.</p>
                     </div>
                 </div>
                 <div id="incoming-orders-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
@@ -142,7 +206,20 @@
                 </div>
             </div>
 
-            <!-- 3. Cashier Mode -->
+            <!-- 3. PESANAN DITERIMA (ACCEPTED/CONFIRMED) -->
+            <div id="view-accepted" class="view-section hidden space-y-6">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xl font-bold text-slate-800">Pesanan Diterima & Selesai</h3>
+                    <input type="text" id="search-accepted" placeholder="Cari kode pesanan..." class="border rounded-lg px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-orange-500">
+                </div>
+                
+                <div id="accepted-orders-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- Cards Injected Here -->
+                </div>
+                <div id="no-accepted" class="hidden text-center text-slate-400 py-10">Belum ada pesanan diterima.</div>
+            </div>
+
+            <!-- 4. CASHIER MODE -->
             <div id="view-cashier" class="view-section hidden h-full flex flex-col md:flex-row gap-4 pb-20 md:pb-0">
                 <div class="flex-1 flex flex-col h-full overflow-hidden">
                      <div class="mb-4 relative">
@@ -166,12 +243,10 @@
                         <div class="text-center text-slate-400 py-10 text-sm">Pilih menu...</div>
                     </div>
                     <div class="p-4 bg-white border-t border-slate-100">
-                        <!-- Customer Name Input -->
                         <div class="mb-3">
                             <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Nama Pelanggan (Wajib)</label>
                             <input type="text" id="cashier-customer-name" placeholder="Masukkan nama..." class="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm outline-none focus:border-orange-500 bg-slate-50">
                         </div>
-
                         <div class="grid grid-cols-2 gap-2 mb-3">
                             <button onclick="setOrderType('Dine In')" class="type-btn py-2 rounded-lg border text-sm font-medium transition bg-orange-50 border-orange-500 text-orange-700" data-type="Dine In">Makan Sini</button>
                             <button onclick="setOrderType('Take Away')" class="type-btn py-2 rounded-lg border text-sm font-medium transition text-slate-600 border-slate-200 hover:bg-slate-50" data-type="Take Away">Bungkus</button>
@@ -189,34 +264,6 @@
                     <i class="fas fa-shopping-basket"></i>
                     <span id="mobile-cart-badge" class="absolute -top-1 -right-1 bg-red-500 w-5 h-5 rounded-full text-[10px] flex items-center justify-center border-2 border-white hidden">0</span>
                 </button>
-            </div>
-
-            <!-- 4. History -->
-            <div id="view-history" class="view-section hidden space-y-6">
-                 <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
-                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-                        <h3 class="text-lg font-bold text-slate-800">Laporan Penjualan</h3>
-                        <div class="flex gap-2 w-full sm:w-auto">
-                             <input type="date" id="filter-date" class="flex-1 sm:w-auto border rounded-lg px-3 py-2 text-sm outline-none focus:border-orange-500 bg-slate-50">
-                             <button onclick="loadHistory()" class="bg-slate-800 text-white px-4 py-2 rounded-lg text-sm hover:bg-slate-900">Filter</button>
-                        </div>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-sm whitespace-nowrap">
-                            <thead class="bg-slate-50 text-slate-500 font-semibold">
-                                <tr>
-                                    <th class="p-4">Waktu</th>
-                                    <th class="p-4">ID</th>
-                                    <th class="p-4">Pelanggan</th>
-                                    <th class="p-4">Sumber</th>
-                                    <th class="p-4">Total</th>
-                                    <th class="p-4 text-center">Cetak</th>
-                                </tr>
-                            </thead>
-                            <tbody id="history-table-body"></tbody>
-                        </table>
-                    </div>
-                </div>
             </div>
         </div>
     </main>
@@ -236,7 +283,6 @@
                 <div>
                     <label class="block text-xs font-bold text-slate-500 mb-1">Link Gambar (URL)</label>
                     <input type="url" name="imageUrl" placeholder="https://..." class="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 outline-none focus:ring-2 focus:ring-orange-500">
-                    <p class="text-[10px] text-slate-400 mt-1">Kosongkan untuk gambar default.</p>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
@@ -257,7 +303,7 @@
         </div>
     </div>
 
-    <!-- Print Template -->
+    <!-- Receipt Print Template -->
     <div id="print-area" class="hidden bg-white p-2 font-mono text-[10px] text-black w-[250px]">
         <div class="text-center mb-2 border-b border-dashed border-black pb-2">
             <h2 class="font-bold text-sm">RUMAH KITA</h2>
@@ -273,38 +319,55 @@
         <div class="text-center mt-2 pt-2 border-t border-black">Terima Kasih!</div>
     </div>
 
+    <!-- Report Print Template -->
+    <div id="report-print-area" class="hidden bg-white p-8 text-black font-sans">
+        <div class="text-center mb-6 border-b-2 border-black pb-4">
+            <h1 class="text-2xl font-bold uppercase">Laporan Penjualan</h1>
+            <h2 class="text-lg">Outlet Rumah Kita</h2>
+            <p id="print-report-date" class="text-sm text-gray-600 mt-1">Periode: -</p>
+        </div>
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="border-b-2 border-black">
+                    <th class="py-2">Tanggal / Periode</th>
+                    <th class="py-2 text-right">Jumlah Transaksi</th>
+                    <th class="py-2 text-right">Total Omzet</th>
+                </tr>
+            </thead>
+            <tbody id="print-report-body"></tbody>
+            <tfoot>
+                <tr class="border-t-2 border-black font-bold text-lg">
+                    <td class="py-4">TOTAL</td>
+                    <td class="py-4 text-right" id="print-report-count">0</td>
+                    <td class="py-4 text-right" id="print-report-revenue">0</td>
+                </tr>
+            </tfoot>
+        </table>
+        <div class="mt-8 text-sm text-gray-500 text-center">Dicetak pada: <span id="print-timestamp"></span></div>
+    </div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, addDoc, updateDoc, deleteDoc, onSnapshot, collection, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        function showToast(msg, type = 'success', duration = 3000) {
+        function showToast(msg, type = 'success') {
             const container = document.getElementById('toast-container');
             const el = document.createElement('div');
             const colors = type === 'success' ? 'bg-emerald-500 text-white' : (type === 'error' ? 'bg-red-500 text-white' : 'bg-slate-800 text-white');
-            const icon = type === 'success' ? '<i class="fas fa-check-circle"></i>' : (type === 'error' ? '<i class="fas fa-exclamation-triangle"></i>' : '<i class="fas fa-info-circle"></i>');
             el.className = `pointer-events-auto p-4 rounded-xl shadow-lg flex items-start gap-3 text-sm font-bold toast-enter ${colors} mb-2`;
-            el.innerHTML = `<div class="mt-0.5">${icon}</div><div class="flex-1">${msg}</div>`;
+            el.innerHTML = `<div>${type==='success'?'<i class="fas fa-check"></i>':'<i class="fas fa-info"></i>'}</div><div class="flex-1">${msg}</div>`;
             container.appendChild(el);
             requestAnimationFrame(() => { el.classList.remove('toast-enter'); el.classList.add('toast-enter-active'); });
-            setTimeout(() => { el.classList.remove('toast-enter-active'); el.classList.add('toast-exit-active'); setTimeout(() => el.remove(), 300); }, duration);
-        }
-
-        function setConnectionStatus(status, msg) {
-            const el = document.getElementById('connection-status');
-            if(status === 'connected') {
-                el.innerHTML = '<span class="w-2 h-2 bg-emerald-500 rounded-full"></span> Terhubung'; el.className = "flex items-center gap-2 text-sm font-bold text-emerald-400";
-            } else if (status === 'error') {
-                el.innerHTML = '<span class="w-2 h-2 bg-red-500 rounded-full"></span> ' + msg; el.className = "flex items-center gap-2 text-sm font-bold text-red-400";
-            }
+            setTimeout(() => el.remove(), 3000);
         }
 
         function generateQueueCode() {
             const now = new Date();
-            const day = String(now.getDate()).padStart(2, '0');
-            const month = String(now.getMonth() + 1).padStart(2, '0');
-            const random = Math.floor(1000 + Math.random() * 9000); 
-            return `Q-${day}${month}-${random}`;
+            const d = String(now.getDate()).padStart(2, '0');
+            const m = String(now.getMonth() + 1).padStart(2, '0');
+            const r = Math.floor(1000 + Math.random() * 9000); 
+            return `Q-${d}${m}-${r}`;
         }
 
         const firebaseConfig = {
@@ -325,15 +388,18 @@
         let allMenu = [];
         let cashierCart = [];
         let currentOrderType = 'Dine In';
+        let reportMode = 'daily'; // 'daily' or 'monthly'
+        let allOrdersCache = [];
 
         signInAnonymously(auth).then(() => {
-            showToast('Berhasil Terhubung ke Database', 'success');
-            setConnectionStatus('connected');
+            showToast('Terhubung ke Database', 'success');
+            document.getElementById('connection-status').innerHTML = '<span class="w-2 h-2 bg-emerald-500 rounded-full"></span> Terhubung';
+            document.getElementById('connection-status').className = "flex items-center gap-2 text-sm font-bold text-emerald-400";
             initListeners();
             updateTime();
         }).catch(err => {
-            showToast(`Gagal Konek: ${err.message}`, 'error', 5000);
-            setConnectionStatus('error', 'Gagal Auth');
+            showToast('Gagal Konek: ' + err.message, 'error');
+            document.getElementById('connection-status').innerHTML = '<span class="w-2 h-2 bg-red-500 rounded-full"></span> Error';
         });
 
         setInterval(updateTime, 60000);
@@ -342,6 +408,7 @@
             const now = new Date();
             document.getElementById('current-time').textContent = now.toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'});
             document.getElementById('current-date').textContent = now.toLocaleDateString('id-ID', {weekday: 'short', day: 'numeric', month: 'short'});
+            document.getElementById('report-date').value = now.toISOString().split('T')[0];
         }
 
         function initListeners() {
@@ -350,51 +417,128 @@
                 renderMenuTable();
                 renderCashierGrid();
                 document.getElementById('total-menu').textContent = allMenu.length;
-            }, (err) => { if(err.code === 'permission-denied') showToast("Izin Ditolak: Cek Rules!", 'error', 8000); });
+            });
 
             onSnapshot(collection(db, COL_ORDERS), (snap) => {
-                const orders = snap.docs.map(d => ({id: d.id, ...d.data()}));
-                const pending = orders.filter(o => o.status === 'pending' && o.source === 'online');
+                allOrdersCache = snap.docs.map(d => ({id: d.id, ...d.data()}));
                 
+                const pending = allOrdersCache.filter(o => o.status === 'pending' && o.source === 'online');
+                const accepted = allOrdersCache.filter(o => ['confirmed', 'completed'].includes(o.status));
+
+                // Badge notification
+                const badge = document.getElementById('notif-badge');
                 if(pending.length > 0) {
-                    const badge = document.getElementById('notif-badge');
-                    if(badge.classList.contains('hidden')) showToast(`Ada ${pending.length} pesanan baru!`, 'info');
                     badge.textContent = pending.length;
                     badge.classList.remove('hidden');
                 } else {
-                    document.getElementById('notif-badge').classList.add('hidden');
+                    badge.classList.add('hidden');
                 }
 
                 renderIncomingOrders(pending);
-                updateStats(orders);
-                if(!document.getElementById('view-history').classList.contains('hidden')) loadHistory(orders);
+                renderAcceptedOrders(accepted);
+                updateDashboardStats(accepted);
+                renderReportTable(); // Refresh reports
             });
         }
 
+        // --- 1. DASHBOARD REPORTS LOGIC ---
+        
+        window.setReportMode = (mode) => {
+            reportMode = mode;
+            document.getElementById('btn-report-daily').className = mode === 'daily' ? "px-4 py-1.5 rounded-md text-sm font-bold transition bg-white text-slate-800 shadow-sm" : "px-4 py-1.5 rounded-md text-sm font-bold transition text-slate-500 hover:text-slate-800";
+            document.getElementById('btn-report-monthly').className = mode === 'monthly' ? "px-4 py-1.5 rounded-md text-sm font-bold transition bg-white text-slate-800 shadow-sm" : "px-4 py-1.5 rounded-md text-sm font-bold transition text-slate-500 hover:text-slate-800";
+            document.getElementById('report-col-1').textContent = mode === 'daily' ? "Tanggal" : "Bulan";
+            renderReportTable();
+        }
+
+        function renderReportTable() {
+            const validOrders = allOrdersCache.filter(o => ['confirmed', 'completed'].includes(o.status) && o.timestamp);
+            const tbody = document.getElementById('report-table-body');
+            const grouped = {};
+
+            validOrders.forEach(o => {
+                const d = new Date(o.timestamp.seconds * 1000);
+                const key = reportMode === 'daily' 
+                    ? d.toISOString().split('T')[0] // YYYY-MM-DD
+                    : `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; // YYYY-MM
+                
+                if(!grouped[key]) grouped[key] = { count: 0, revenue: 0 };
+                grouped[key].count++;
+                grouped[key].revenue += parseInt(o.total);
+            });
+
+            // Convert to array and sort desc
+            const rows = Object.keys(grouped).sort().reverse().map(k => ({key: k, ...grouped[k]}));
+            
+            let totalC = 0, totalR = 0;
+            tbody.innerHTML = rows.map(r => {
+                totalC += r.count;
+                totalR += r.revenue;
+                const displayDate = reportMode === 'daily' 
+                    ? new Date(r.key).toLocaleDateString('id-ID', {weekday: 'short', day:'numeric', month:'short'})
+                    : new Date(r.key + '-01').toLocaleDateString('id-ID', {month:'long', year:'numeric'});
+                
+                return `
+                    <tr>
+                        <td class="p-4">${displayDate}</td>
+                        <td class="p-4 font-bold">${r.count}</td>
+                        <td class="p-4">Rp ${r.revenue.toLocaleString()}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            document.getElementById('report-total-count').textContent = totalC;
+            document.getElementById('report-total-revenue').textContent = 'Rp ' + totalR.toLocaleString();
+            
+            // Store for print usage
+            window.currentReportData = rows;
+            window.currentReportTotals = { count: totalC, revenue: totalR };
+        }
+
+        window.printReport = () => {
+            const rows = window.currentReportData || [];
+            const totals = window.currentReportTotals || {count:0, revenue:0};
+            const dateTitle = reportMode === 'daily' ? "Laporan Harian" : "Laporan Bulanan";
+            
+            document.getElementById('print-report-date').textContent = dateTitle;
+            document.getElementById('print-report-body').innerHTML = rows.map(r => {
+                 const displayDate = reportMode === 'daily' 
+                    ? new Date(r.key).toLocaleDateString('id-ID', {weekday: 'short', day:'numeric', month:'short', year:'numeric'})
+                    : new Date(r.key + '-01').toLocaleDateString('id-ID', {month:'long', year:'numeric'});
+                return `
+                    <tr class="border-b border-gray-200">
+                        <td class="py-2">${displayDate}</td>
+                        <td class="py-2 text-right">${r.count}</td>
+                        <td class="py-2 text-right">Rp ${r.revenue.toLocaleString()}</td>
+                    </tr>
+                `;
+            }).join('');
+            
+            document.getElementById('print-report-count').textContent = totals.count;
+            document.getElementById('print-report-revenue').textContent = 'Rp ' + totals.revenue.toLocaleString();
+            document.getElementById('print-timestamp').textContent = new Date().toLocaleString('id-ID');
+            
+            window.print();
+        }
+
+        function updateDashboardStats(accepted) {
+            const today = new Date().toISOString().split('T')[0];
+            const todayOrders = accepted.filter(o => o.timestamp && new Date(o.timestamp.seconds*1000).toISOString().split('T')[0] === today);
+            document.getElementById('daily-revenue').textContent = 'Rp ' + todayOrders.reduce((a,b) => a + parseInt(b.total), 0).toLocaleString();
+            document.getElementById('daily-orders').textContent = todayOrders.length;
+        }
+
+        // --- 2. MENU LOGIC ---
         function renderMenuTable() {
             document.getElementById('menu-table-body').innerHTML = allMenu.map(item => `
                 <tr class="border-b border-slate-100 hover:bg-white">
-                    <td class="p-4"><div class="w-10 h-10 rounded bg-slate-100 overflow-hidden border border-slate-200"><img src="${item.imageUrl || `https://placehold.co/100x100/f1f5f9/94a3b8?text=${item.name.charAt(0)}`}" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/100x100?text=Img'"></div></td>
+                    <td class="p-4"><div class="w-10 h-10 rounded bg-slate-100 overflow-hidden border border-slate-200"><img src="${item.imageUrl || `https://placehold.co/100x100?text=${item.name.charAt(0)}`}" class="w-full h-full object-cover"></div></td>
                     <td class="p-4 font-medium text-slate-800">${item.name}</td>
-                    <td class="p-4"><span class="bg-slate-100 text-slate-600 px-2 py-1 rounded text-xs font-bold">${item.category}</span></td>
                     <td class="p-4">Rp ${parseInt(item.price).toLocaleString()}</td>
                     <td class="p-4 text-center"><button onclick="window.deleteMenu('${item.id}')" class="text-red-400 hover:text-red-600"><i class="fas fa-trash"></i></button></td>
                 </tr>
             `).join('');
         }
-
-        function renderCashierGrid() {
-            const search = document.getElementById('cashier-search').value.toLowerCase();
-            const filtered = allMenu.filter(m => m.name.toLowerCase().includes(search));
-            document.getElementById('cashier-grid').innerHTML = filtered.map(item => `
-                <div onclick="window.addToCashierCart('${item.id}')" class="bg-white p-3 rounded-xl border border-slate-100 cursor-pointer hover:border-orange-400 transition group shadow-sm">
-                    <div class="h-24 w-full bg-slate-50 rounded-lg mb-2 overflow-hidden"><img src="${item.imageUrl || `https://placehold.co/200x200/f1f5f9/94a3b8?text=${item.name.charAt(0)}`}" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/200x200?text=Img'"></div>
-                    <h4 class="font-bold text-sm text-slate-800 truncate">${item.name}</h4>
-                    <p class="text-orange-600 text-sm font-bold">Rp ${parseInt(item.price).toLocaleString()}</p>
-                </div>
-            `).join('');
-        }
-
         const menuForm = document.getElementById('add-menu-form');
         menuForm.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -405,64 +549,99 @@
                     name: fd.get('name'), price: parseInt(fd.get('price')), category: fd.get('category'),
                     imageUrl: fd.get('imageUrl') || "", available: true, createdAt: serverTimestamp()
                 });
-                showToast('Menu Berhasil Disimpan!', 'success'); window.toggleModal('add-menu-modal'); menuForm.reset();
+                showToast('Menu Tersimpan!'); window.toggleModal('add-menu-modal'); menuForm.reset();
             } catch(err) { showToast("Gagal: " + err.code, 'error'); } finally { btn.innerText = originalText; btn.disabled = false; }
         });
 
+        // --- 3. INCOMING ORDERS ---
         function renderIncomingOrders(orders) {
             const container = document.getElementById('incoming-orders-grid');
-            const noData = document.getElementById('no-incoming');
-            if(orders.length === 0) { container.innerHTML = ''; noData.classList.remove('hidden'); return; }
-            noData.classList.add('hidden');
+            if(orders.length === 0) { container.innerHTML = ''; document.getElementById('no-incoming').classList.remove('hidden'); return; }
+            document.getElementById('no-incoming').classList.add('hidden');
             container.innerHTML = orders.map(order => `
                 <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
                     <div class="flex justify-between mb-2"><span class="font-bold text-lg">${order.queueCode}</span><span class="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded">ONLINE</span></div>
                     <div class="mb-2">
                         <p class="font-bold text-sm">${order.customerName}</p>
                         <p class="text-xs text-slate-500 flex items-center gap-1"><i class="fab fa-whatsapp"></i> ${order.customerPhone || '-'}</p>
-                        <p class="text-xs text-slate-500 truncate">${order.address}</p>
                     </div>
                     <div class="bg-slate-50 p-2 rounded text-xs mb-3 space-y-1">${order.items.map(i => `<div class="flex justify-between"><span>${i.qty}x ${i.name}</span><span>${(i.price*i.qty).toLocaleString()}</span></div>`).join('')}<div class="border-t pt-1 mt-1 flex justify-between font-bold"><span>Total</span><span>Rp ${parseInt(order.total).toLocaleString()}</span></div></div>
                     <div class="flex gap-2">
                         <button onclick="updateStatus('${order.id}', 'cancelled')" class="flex-1 py-2 rounded bg-red-50 text-red-500 text-xs font-bold">Tolak</button>
-                        <button onclick="confirmOrder('${order.id}', '${order.customerPhone}', '${order.customerName}', '${order.queueCode}')" class="flex-1 py-2 rounded bg-emerald-500 text-white text-xs font-bold flex items-center justify-center gap-1">
-                            <i class="fab fa-whatsapp"></i> Terima
-                        </button>
+                        <button onclick="confirmOrder('${order.id}', '${order.customerPhone}', '${order.customerName}', '${order.queueCode}')" class="flex-1 py-2 rounded bg-emerald-500 text-white text-xs font-bold flex items-center justify-center gap-1"><i class="fab fa-whatsapp"></i> Terima</button>
                     </div>
                 </div>
             `).join('');
         }
 
+        // --- 4. ACCEPTED / COMPLETED ORDERS ---
+        function renderAcceptedOrders(orders) {
+            const container = document.getElementById('accepted-orders-grid');
+            const search = document.getElementById('search-accepted').value.toLowerCase();
+            
+            // Filter and sort
+            let filtered = orders.sort((a,b) => b.timestamp?.seconds - a.timestamp?.seconds);
+            if(search) filtered = filtered.filter(o => o.queueCode.toLowerCase().includes(search) || o.customerName.toLowerCase().includes(search));
+            
+            if(filtered.length === 0) { container.innerHTML = ''; document.getElementById('no-accepted').classList.remove('hidden'); return; }
+            document.getElementById('no-accepted').classList.add('hidden');
+            
+            container.innerHTML = filtered.map(o => `
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col h-full">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <span class="font-bold text-lg block">${o.queueCode}</span>
+                            <span class="text-xs text-slate-400">${new Date(o.timestamp?.seconds*1000).toLocaleDateString()}</span>
+                        </div>
+                        <span class="px-2 py-1 rounded text-[10px] font-bold uppercase ${o.source === 'online' ? 'bg-blue-50 text-blue-600' : 'bg-orange-50 text-orange-600'}">${o.source}</span>
+                    </div>
+                    <div class="mb-2 flex-1">
+                        <p class="text-sm font-bold text-slate-700">${o.customerName || 'Pelanggan'}</p>
+                        <p class="text-xs text-slate-500 truncate">${o.items.map(i => i.name).join(', ')}</p>
+                    </div>
+                    <div class="flex justify-between items-center pt-2 border-t border-slate-100 mt-auto">
+                        <span class="font-bold text-emerald-600">Rp ${parseInt(o.total).toLocaleString()}</span>
+                        <button onclick='window.printOrder(${JSON.stringify(o)})' class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg font-bold flex items-center gap-1">
+                            <i class="fas fa-print"></i> Struk
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        document.getElementById('search-accepted').addEventListener('input', () => {
+            const orders = allOrdersCache.filter(o => ['confirmed', 'completed'].includes(o.status));
+            renderAcceptedOrders(orders);
+        });
+
+        // --- CASHIER ---
+        function renderCashierGrid() {
+            const search = document.getElementById('cashier-search').value.toLowerCase();
+            const filtered = allMenu.filter(m => m.name.toLowerCase().includes(search));
+            document.getElementById('cashier-grid').innerHTML = filtered.map(item => `
+                <div onclick="window.addToCashierCart('${item.id}')" class="bg-white p-3 rounded-xl border border-slate-100 cursor-pointer hover:border-orange-400 transition group shadow-sm">
+                    <div class="h-24 w-full bg-slate-50 rounded-lg mb-2 overflow-hidden"><img src="${item.imageUrl || `https://placehold.co/200x200?text=${item.name.charAt(0)}`}" class="w-full h-full object-cover"></div>
+                    <h4 class="font-bold text-sm text-slate-800 truncate">${item.name}</h4>
+                    <p class="text-orange-600 text-sm font-bold">Rp ${parseInt(item.price).toLocaleString()}</p>
+                </div>
+            `).join('');
+        }
+
+        // --- GLOBAL ACTIONS ---
         window.confirmOrder = async (id, phone, name, code) => {
             if(!confirm(`Terima pesanan ${code}?`)) return;
             try {
-                // 1. Update status di DB
                 await updateDoc(doc(db, COL_ORDERS, id), { status: 'confirmed' });
-                showToast('Pesanan Diterima!', 'success');
-                
-                // 2. Format nomor WA: 08xx -> 628xx
+                showToast('Pesanan Diterima!');
                 let formattedPhone = phone;
                 if(formattedPhone.startsWith('0')) formattedPhone = '62' + formattedPhone.substring(1);
-                
-                // 3. Buka WA
-                const msg = `Halo Kak ${name}, pesanan kamu dengan kode *${code}* sudah kami konfirmasi dan sedang kami proses masak. Mohon ditunggu ya! 👩‍🍳🛵`;
-                const url = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(msg)}`;
-                window.open(url, '_blank');
-                
-            } catch(e) { showToast('Gagal update: ' + e.code, 'error'); }
+                const msg = `Halo Kak ${name}, pesanan *${code}* sudah kami terima dan sedang dimasak. Mohon ditunggu! 👩‍🍳`;
+                window.open(`https://wa.me/${formattedPhone}?text=${encodeURIComponent(msg)}`, '_blank');
+            } catch(e) { showToast('Gagal: ' + e.code, 'error'); }
         };
-
-        window.updateStatus = async (id, st) => { try { await updateDoc(doc(db, COL_ORDERS, id), { status: st }); showToast(st==='confirmed'?'Pesanan Diterima':'Pesanan Ditolak', st==='confirmed'?'success':'info'); } catch(e) { showToast('Gagal: ' + e.code, 'error'); } };
-
-        function updateStats(orders) {
-            const today = new Date().toISOString().split('T')[0];
-            const valid = orders.filter(o => ['confirmed', 'completed'].includes(o.status) && o.timestamp && new Date(o.timestamp.seconds*1000).toISOString().split('T')[0] === today);
-            document.getElementById('daily-revenue').textContent = 'Rp ' + valid.reduce((a,b) => a + parseInt(b.total), 0).toLocaleString();
-            document.getElementById('daily-orders').textContent = valid.length;
-        }
-        
+        window.updateStatus = async (id, st) => { try { await updateDoc(doc(db, COL_ORDERS, id), { status: st }); showToast(st==='confirmed'?'Pesanan Diterima':'Pesanan Ditolak'); } catch(e) { showToast('Gagal: ' + e.code, 'error'); } };
         window.deleteMenu = async (id) => { if(confirm("Hapus menu?")) { try { await deleteDoc(doc(db, COL_MENU, id)); showToast("Menu dihapus"); } catch(e) { showToast("Gagal: "+e.code, 'error'); } } };
         
+        // Cashier Cart Logic
         window.addToCashierCart = (id) => { const item = allMenu.find(m => m.id === id); const exist = cashierCart.find(c => c.id === id); if(exist) exist.qty++; else cashierCart.push({...item, qty: 1}); renderCashierCart(); }
         window.clearCashierCart = () => { cashierCart = []; renderCashierCart(); }
         function renderCashierCart() {
@@ -479,23 +658,15 @@
             if(cashierCart.length === 0) return showToast("Keranjang Kosong!", 'error');
             const custName = document.getElementById('cashier-customer-name').value.trim();
             if(!custName) return showToast("Nama Pelanggan Wajib Diisi!", 'error');
-
             const total = cashierCart.reduce((a,b) => a+(b.price*b.qty), 0);
             const queueCode = generateQueueCode();
-
             try {
-                const order = {
-                    items: cashierCart, total, status: 'completed', source: 'offline',
-                    type: currentOrderType, paymentMethod: 'Cash',
-                    customerName: custName, 
-                    timestamp: serverTimestamp(), queueCode
-                };
+                const order = { items: cashierCart, total, status: 'completed', source: 'offline', type: currentOrderType, paymentMethod: 'Cash', customerName: custName, timestamp: serverTimestamp(), queueCode };
                 await addDoc(collection(db, COL_ORDERS), order);
-                showToast("Transaksi Berhasil!", 'success');
+                showToast("Transaksi Berhasil!");
                 window.printOrder({...order, timestamp: {seconds: Date.now()/1000}, deliveryFee: 0});
-                clearCashierCart();
-                document.getElementById('cashier-customer-name').value = "";
-            } catch(e) { showToast("Gagal Transaksi: " + e.code, 'error'); }
+                clearCashierCart(); document.getElementById('cashier-customer-name').value = "";
+            } catch(e) { showToast("Gagal: " + e.code, 'error'); }
         }
 
         window.printOrder = (o) => {
@@ -504,26 +675,8 @@
             document.getElementById('print-items').innerHTML = o.items.map(i => `<div class="flex justify-between mb-1"><span>${i.qty} ${i.name}</span><span>${(i.price*i.qty).toLocaleString()}</span></div>`).join('');
             document.getElementById('print-fee').textContent = (o.deliveryFee||0).toLocaleString();
             document.getElementById('print-total').textContent = parseInt(o.total).toLocaleString();
+            document.getElementById('print-time').textContent = new Date(o.timestamp.seconds*1000).toLocaleString('id-ID');
             window.print();
-        }
-
-        window.loadHistory = async (orders = null) => {
-             if(!orders) { const snap = await getDocs(collection(db, COL_ORDERS)); orders = snap.docs.map(d => ({id: d.id, ...d.data()})); }
-             const dateInput = document.getElementById('filter-date').value;
-             let filtered = orders.filter(o => ['confirmed', 'completed'].includes(o.status));
-             if(dateInput) filtered = filtered.filter(o => o.timestamp && new Date(o.timestamp.seconds*1000).toISOString().split('T')[0] === dateInput);
-             filtered.sort((a,b) => b.timestamp?.seconds - a.timestamp?.seconds);
-             
-             document.getElementById('history-table-body').innerHTML = filtered.map(o => `
-                <tr class="border-b border-slate-100 hover:bg-white">
-                    <td class="p-4 text-xs">${new Date(o.timestamp.seconds*1000).toLocaleString()}</td>
-                    <td class="p-4 font-bold">${o.queueCode}</td>
-                    <td class="p-4 font-bold text-slate-600 text-xs uppercase">${o.customerName || '-'}</td>
-                    <td class="p-4"><span class="px-2 py-1 rounded text-xs font-bold ${o.source === 'online' ? 'bg-blue-50 text-blue-600' : 'bg-orange-50 text-orange-600'}">${o.source.toUpperCase()}</span></td>
-                    <td class="p-4 font-bold text-emerald-600">Rp ${parseInt(o.total).toLocaleString()}</td>
-                    <td class="p-4 text-center"><button onclick='window.printOrder(${JSON.stringify(o)})'><i class="fas fa-print text-slate-400 hover:text-black"></i></button></td>
-                </tr>
-             `).join('');
         }
 
         document.getElementById('cashier-search').addEventListener('input', renderCashierGrid);
