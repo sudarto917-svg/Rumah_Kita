@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Outlet Rumah Kita</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; }
+        #sidebar { transition: transform 0.3s ease-in-out; }
+        .sidebar-closed { transform: translateX(-100%); }
+        @media (min-width: 768px) { .sidebar-closed { transform: translateX(0); } }
+        
+        /* Toast Animation */
+        .toast-enter { transform: translateX(100%); opacity: 0; }
+        .toast-enter-active { transform: translateX(0); opacity: 1; transition: all 0.3s ease-out; }
+        .toast-exit-active { transform: translateX(100%); opacity: 0; transition: all 0.3s ease-in; }
+    </style>
+</head>
+<body class="text-slate-800 h-screen flex overflow-hidden bg-slate-50">
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="fixed top-5 right-5 z-[100] flex flex-col gap-2 w-80 pointer-events-none"></div>
+
+    <!-- Mobile Overlay -->
+    <div id="mobile-overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/50 z-20 hidden md:hidden backdrop-blur-sm"></div>
+
+    <!-- Sidebar -->
+    <aside class="fixed md:static inset-y-0 left-0 z-30 w-64 bg-slate-900 text-white flex flex-col transition-transform duration-300 sidebar-closed md:transform-none shadow-xl" id="sidebar">
+        <div class="p-6 flex items-center justify-between border-b border-slate-800">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center font-bold text-lg">R</div>
+                <h1 class="text-lg font-bold tracking-tight">RUMAH KITA</h1>
+            </div>
+            <button onclick="toggleSidebar()" class="md:hidden text-gray-400 hover:text-white"><i class="fas fa-times"></i></button>
+        </div>
+
+        <nav class="flex-1 overflow-y-auto py-4 space-y-1 px-3">
+            <button onclick="switchTab('dashboard')" class="nav-item w-full text-left px-4 py-3 rounded-xl hover:bg-white/10 transition flex items-center gap-3 text-slate-300" id="nav-dashboard">
+                <i class="fas fa-chart-pie w-5"></i> Dashboard & Menu
+            </button>
+            <button onclick="switchTab('incoming')" class="nav-item w-full text-left px-4 py-3 rounded-xl hover:bg-white/10 transition flex items-center gap-3 text-slate-300 relative" id="nav-incoming">
+                <i class="fas fa-bell w-5"></i> Pesanan Masuk
+                <span id="notif-badge" class="hidden absolute right-3 bg-rose-500 text-white text-[10px] px-2 py-0.5 rounded-full animate-pulse">0</span>
+            </button>
+            <button onclick="switchTab('cashier')" class="nav-item w-full text-left px-4 py-3 rounded-xl hover:bg-white/10 transition flex items-center gap-3 text-slate-300" id="nav-cashier">
+                <i class="fas fa-cash-register w-5"></i> Kasir (POS)
+            </button>
+            <button onclick="switchTab('history')" class="nav-item w-full text-left px-4 py-3 rounded-xl hover:bg-white/10 transition flex items-center gap-3 text-slate-300" id="nav-history">
+                <i class="fas fa-file-invoice w-5"></i> Laporan
+            </button>
+        </nav>
+
+        <div class="p-4 border-t border-slate-800">
+            <div class="bg-slate-800 rounded-xl p-3">
+                <p class="text-xs text-slate-400 mb-1">Status Koneksi</p>
+                <div id="connection-status" class="flex items-center gap-2 text-sm font-bold text-yellow-400">
+                    <span class="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></span> Menghubungkan...
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col h-full overflow-hidden relative w-full">
+        <header class="bg-white h-16 border-b border-slate-200 flex items-center justify-between px-4 md:px-8 z-10">
+            <div class="flex items-center gap-4">
+                <button onclick="toggleSidebar()" class="md:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-lg">
+                    <i class="fas fa-bars text-xl"></i>
+                </button>
+                <h2 id="page-title" class="text-lg md:text-xl font-bold text-slate-800">Dashboard</h2>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="text-right hidden md:block">
+                    <p class="text-sm font-bold text-slate-700" id="current-time">--:--</p>
+                    <p class="text-xs text-slate-500" id="current-date">Loading...</p>
+                </div>
+                <div class="h-9 w-9 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center border border-orange-200">
+                    <i class="fas fa-user-shield text-sm"></i>
+                </div>
+            </div>
+        </header>
+
+        <div class="flex-1 overflow-y-auto p-4 md:p-8 relative scroll-smooth bg-slate-50" id="content-area">
+            
+            <!-- 1. Dashboard & Menu -->
+            <div id="view-dashboard" class="view-section space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+                    <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
+                        <p class="text-slate-500 text-xs uppercase font-bold mb-1">Pendapatan Hari Ini</p>
+                        <h3 class="text-2xl md:text-3xl font-bold text-slate-800" id="daily-revenue">Rp 0</h3>
+                    </div>
+                    <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
+                        <p class="text-slate-500 text-xs uppercase font-bold mb-1">Total Pesanan Hari Ini</p>
+                        <h3 class="text-2xl md:text-3xl font-bold text-slate-800" id="daily-orders">0</h3>
+                    </div>
+                    <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
+                        <p class="text-slate-500 text-xs uppercase font-bold mb-1">Total Menu Aktif</p>
+                        <h3 class="text-2xl md:text-3xl font-bold text-slate-800" id="total-menu">0</h3>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl border border-slate-100 shadow-sm">
+                    <div class="p-6 border-b border-slate-100 flex justify-between items-center">
+                        <h3 class="text-lg font-bold text-slate-800">Daftar Menu</h3>
+                        <button onclick="toggleModal('add-menu-modal')" class="bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-black transition flex items-center gap-2">
+                            <i class="fas fa-plus"></i> Tambah Menu
+                        </button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-slate-50 text-slate-500 font-semibold uppercase text-xs">
+                                <tr>
+                                    <th class="p-4 pl-6">Gambar</th>
+                                    <th class="p-4">Produk</th>
+                                    <th class="p-4">Kategori</th>
+                                    <th class="p-4">Harga</th>
+                                    <th class="p-4 text-center">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="menu-table-body" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Incoming Orders -->
+            <div id="view-incoming" class="view-section hidden space-y-6">
+                 <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-4 flex gap-3 items-start">
+                    <i class="fas fa-info-circle text-indigo-500 mt-1"></i>
+                    <div>
+                        <h4 class="font-bold text-indigo-900 text-sm">Konfirmasi Pembayaran</h4>
+                        <p class="text-xs text-indigo-700 mt-1">Klik "Terima" untuk otomatis mengirim WA konfirmasi ke pelanggan.</p>
+                    </div>
+                </div>
+                <div id="incoming-orders-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+                <div id="no-incoming" class="hidden flex flex-col items-center justify-center py-20 text-slate-400">
+                    <i class="fas fa-check-circle text-4xl mb-2 text-emerald-200"></i>
+                    <p>Tidak ada pesanan baru.</p>
+                </div>
+            </div>
+
+            <!-- 3. Cashier Mode -->
+            <div id="view-cashier" class="view-section hidden h-full flex flex-col md:flex-row gap-4 pb-20 md:pb-0">
+                <div class="flex-1 flex flex-col h-full overflow-hidden">
+                     <div class="mb-4 relative">
+                        <i class="fas fa-search absolute left-4 top-3.5 text-slate-400"></i>
+                        <input type="text" id="cashier-search" placeholder="Cari menu..." class="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-orange-500 outline-none text-sm">
+                    </div>
+                    <div class="flex-1 overflow-y-auto pr-2">
+                        <div id="cashier-grid" class="grid grid-cols-2 lg:grid-cols-3 gap-3"></div>
+                    </div>
+                </div>
+                
+                <div class="w-full md:w-96 bg-white md:border border-slate-200 flex flex-col shadow-2xl md:shadow-none fixed md:static bottom-0 left-0 right-0 h-[70vh] md:h-full z-20 rounded-t-3xl transform transition-transform duration-300 translate-y-full md:translate-y-0" id="cashier-panel">
+                    <div class="md:hidden w-full flex justify-center pt-2 pb-1 cursor-pointer" onclick="toggleCashierPanelMobile()">
+                        <div class="w-12 h-1.5 bg-slate-300 rounded-full"></div>
+                    </div>
+                    <div class="p-4 border-b border-slate-100 flex justify-between items-center">
+                        <h3 class="font-bold text-slate-800">Keranjang Kasir</h3>
+                        <button class="text-xs text-red-500" onclick="clearCashierCart()">Kosongkan</button>
+                    </div>
+                    <div class="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50/50" id="cashier-cart-items">
+                        <div class="text-center text-slate-400 py-10 text-sm">Pilih menu...</div>
+                    </div>
+                    <div class="p-4 bg-white border-t border-slate-100">
+                        <!-- Customer Name Input -->
+                        <div class="mb-3">
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Nama Pelanggan (Wajib)</label>
+                            <input type="text" id="cashier-customer-name" placeholder="Masukkan nama..." class="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm outline-none focus:border-orange-500 bg-slate-50">
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2 mb-3">
+                            <button onclick="setOrderType('Dine In')" class="type-btn py-2 rounded-lg border text-sm font-medium transition bg-orange-50 border-orange-500 text-orange-700" data-type="Dine In">Makan Sini</button>
+                            <button onclick="setOrderType('Take Away')" class="type-btn py-2 rounded-lg border text-sm font-medium transition text-slate-600 border-slate-200 hover:bg-slate-50" data-type="Take Away">Bungkus</button>
+                        </div>
+                        <div class="flex justify-between items-end mb-4">
+                            <span class="text-slate-500 text-sm">Total</span>
+                            <span class="text-xl font-bold text-slate-900" id="cashier-total">Rp 0</span>
+                        </div>
+                        <button onclick="processCashierOrder()" class="w-full bg-slate-900 text-white py-3.5 rounded-xl font-bold hover:bg-black shadow-lg transition active:scale-95">
+                            Bayar & Cetak
+                        </button>
+                    </div>
+                </div>
+                <button onclick="toggleCashierPanelMobile()" class="md:hidden fixed bottom-6 right-6 w-14 h-14 bg-orange-600 text-white rounded-full shadow-xl flex items-center justify-center z-10">
+                    <i class="fas fa-shopping-basket"></i>
+                    <span id="mobile-cart-badge" class="absolute -top-1 -right-1 bg-red-500 w-5 h-5 rounded-full text-[10px] flex items-center justify-center border-2 border-white hidden">0</span>
+                </button>
+            </div>
+
+            <!-- 4. History -->
+            <div id="view-history" class="view-section hidden space-y-6">
+                 <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                        <h3 class="text-lg font-bold text-slate-800">Laporan Penjualan</h3>
+                        <div class="flex gap-2 w-full sm:w-auto">
+                             <input type="date" id="filter-date" class="flex-1 sm:w-auto border rounded-lg px-3 py-2 text-sm outline-none focus:border-orange-500 bg-slate-50">
+                             <button onclick="loadHistory()" class="bg-slate-800 text-white px-4 py-2 rounded-lg text-sm hover:bg-slate-900">Filter</button>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm whitespace-nowrap">
+                            <thead class="bg-slate-50 text-slate-500 font-semibold">
+                                <tr>
+                                    <th class="p-4">Waktu</th>
+                                    <th class="p-4">ID</th>
+                                    <th class="p-4">Pelanggan</th>
+                                    <th class="p-4">Sumber</th>
+                                    <th class="p-4">Total</th>
+                                    <th class="p-4 text-center">Cetak</th>
+                                </tr>
+                            </thead>
+                            <tbody id="history-table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Add Menu Modal -->
+    <div id="add-menu-modal" class="fixed inset-0 bg-black/60 hidden items-center justify-center z-50 backdrop-blur-sm p-4">
+        <div class="bg-white rounded-2xl w-full max-w-md shadow-2xl">
+            <div class="p-5 border-b border-slate-100 flex justify-between items-center">
+                <h3 class="text-lg font-bold">Tambah Menu</h3>
+                <button onclick="toggleModal('add-menu-modal')" type="button"><i class="fas fa-times text-slate-400"></i></button>
+            </div>
+            <form id="add-menu-form" class="p-5 space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 mb-1">Nama Produk</label>
+                    <input type="text" name="name" required class="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 outline-none focus:ring-2 focus:ring-orange-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 mb-1">Link Gambar (URL)</label>
+                    <input type="url" name="imageUrl" placeholder="https://..." class="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 outline-none focus:ring-2 focus:ring-orange-500">
+                    <p class="text-[10px] text-slate-400 mt-1">Kosongkan untuk gambar default.</p>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1">Harga</label>
+                        <input type="number" name="price" required class="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 outline-none focus:ring-2 focus:ring-orange-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1">Kategori</label>
+                        <select name="category" class="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 outline-none focus:ring-2 focus:ring-orange-500">
+                            <option value="Minuman">Minuman</option>
+                            <option value="Makanan">Makanan</option>
+                            <option value="Snack">Snack</option>
+                        </select>
+                    </div>
+                </div>
+                <button type="submit" class="w-full py-3 rounded-xl bg-slate-900 text-white font-bold hover:bg-black transition">Simpan Menu</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Print Template -->
+    <div id="print-area" class="hidden bg-white p-2 font-mono text-[10px] text-black w-[250px]">
+        <div class="text-center mb-2 border-b border-dashed border-black pb-2">
+            <h2 class="font-bold text-sm">RUMAH KITA</h2>
+            <p id="print-time">-</p>
+        </div>
+        <div class="text-center text-xl font-bold mb-2" id="print-queue">Q-000</div>
+        <div class="text-center mb-2 font-bold text-xs" id="print-name">PELANGGAN: -</div>
+        <div id="print-items" class="mb-2"></div>
+        <div class="border-t border-dashed border-black pt-2">
+            <div class="flex justify-between"><span>Ongkir</span><span id="print-fee">0</span></div>
+            <div class="flex justify-between font-bold"><span>TOTAL</span><span id="print-total">0</span></div>
+        </div>
+        <div class="text-center mt-2 pt-2 border-t border-black">Terima Kasih!</div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, addDoc, updateDoc, deleteDoc, onSnapshot, collection, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        function showToast(msg, type = 'success', duration = 3000) {
+            const container = document.getElementById('toast-container');
+            const el = document.createElement('div');
+            const colors = type === 'success' ? 'bg-emerald-500 text-white' : (type === 'error' ? 'bg-red-500 text-white' : 'bg-slate-800 text-white');
+            const icon = type === 'success' ? '<i class="fas fa-check-circle"></i>' : (type === 'error' ? '<i class="fas fa-exclamation-triangle"></i>' : '<i class="fas fa-info-circle"></i>');
+            el.className = `pointer-events-auto p-4 rounded-xl shadow-lg flex items-start gap-3 text-sm font-bold toast-enter ${colors} mb-2`;
+            el.innerHTML = `<div class="mt-0.5">${icon}</div><div class="flex-1">${msg}</div>`;
+            container.appendChild(el);
+            requestAnimationFrame(() => { el.classList.remove('toast-enter'); el.classList.add('toast-enter-active'); });
+            setTimeout(() => { el.classList.remove('toast-enter-active'); el.classList.add('toast-exit-active'); setTimeout(() => el.remove(), 300); }, duration);
+        }
+
+        function setConnectionStatus(status, msg) {
+            const el = document.getElementById('connection-status');
+            if(status === 'connected') {
+                el.innerHTML = '<span class="w-2 h-2 bg-emerald-500 rounded-full"></span> Terhubung'; el.className = "flex items-center gap-2 text-sm font-bold text-emerald-400";
+            } else if (status === 'error') {
+                el.innerHTML = '<span class="w-2 h-2 bg-red-500 rounded-full"></span> ' + msg; el.className = "flex items-center gap-2 text-sm font-bold text-red-400";
+            }
+        }
+
+        function generateQueueCode() {
+            const now = new Date();
+            const day = String(now.getDate()).padStart(2, '0');
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const random = Math.floor(1000 + Math.random() * 9000); 
+            return `Q-${day}${month}-${random}`;
+        }
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCVl_0OhaCKRiJ5-qPKwaoMs3q11tHRbys",
+            authDomain: "outlet-rumah-kita.firebaseapp.com",
+            projectId: "outlet-rumah-kita",
+            storageBucket: "outlet-rumah-kita.firebasestorage.app",
+            messagingSenderId: "1081923667869",
+            appId: "1:1081923667869:web:797fce3cc6de79d2c69174"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        const COL_MENU = 'cafe_menu';
+        const COL_ORDERS = 'cafe_orders';
+
+        let allMenu = [];
+        let cashierCart = [];
+        let currentOrderType = 'Dine In';
+
+        signInAnonymously(auth).then(() => {
+            showToast('Berhasil Terhubung ke Database', 'success');
+            setConnectionStatus('connected');
+            initListeners();
+            updateTime();
+        }).catch(err => {
+            showToast(`Gagal Konek: ${err.message}`, 'error', 5000);
+            setConnectionStatus('error', 'Gagal Auth');
+        });
+
+        setInterval(updateTime, 60000);
+
+        function updateTime() {
+            const now = new Date();
+            document.getElementById('current-time').textContent = now.toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'});
+            document.getElementById('current-date').textContent = now.toLocaleDateString('id-ID', {weekday: 'short', day: 'numeric', month: 'short'});
+        }
+
+        function initListeners() {
+            onSnapshot(collection(db, COL_MENU), (snap) => {
+                allMenu = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                renderMenuTable();
+                renderCashierGrid();
+                document.getElementById('total-menu').textContent = allMenu.length;
+            }, (err) => { if(err.code === 'permission-denied') showToast("Izin Ditolak: Cek Rules!", 'error', 8000); });
+
+            onSnapshot(collection(db, COL_ORDERS), (snap) => {
+                const orders = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                const pending = orders.filter(o => o.status === 'pending' && o.source === 'online');
+                
+                if(pending.length > 0) {
+                    const badge = document.getElementById('notif-badge');
+                    if(badge.classList.contains('hidden')) showToast(`Ada ${pending.length} pesanan baru!`, 'info');
+                    badge.textContent = pending.length;
+                    badge.classList.remove('hidden');
+                } else {
+                    document.getElementById('notif-badge').classList.add('hidden');
+                }
+
+                renderIncomingOrders(pending);
+                updateStats(orders);
+                if(!document.getElementById('view-history').classList.contains('hidden')) loadHistory(orders);
+            });
+        }
+
+        function renderMenuTable() {
+            document.getElementById('menu-table-body').innerHTML = allMenu.map(item => `
+                <tr class="border-b border-slate-100 hover:bg-white">
+                    <td class="p-4"><div class="w-10 h-10 rounded bg-slate-100 overflow-hidden border border-slate-200"><img src="${item.imageUrl || `https://placehold.co/100x100/f1f5f9/94a3b8?text=${item.name.charAt(0)}`}" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/100x100?text=Img'"></div></td>
+                    <td class="p-4 font-medium text-slate-800">${item.name}</td>
+                    <td class="p-4"><span class="bg-slate-100 text-slate-600 px-2 py-1 rounded text-xs font-bold">${item.category}</span></td>
+                    <td class="p-4">Rp ${parseInt(item.price).toLocaleString()}</td>
+                    <td class="p-4 text-center"><button onclick="window.deleteMenu('${item.id}')" class="text-red-400 hover:text-red-600"><i class="fas fa-trash"></i></button></td>
+                </tr>
+            `).join('');
+        }
+
+        function renderCashierGrid() {
+            const search = document.getElementById('cashier-search').value.toLowerCase();
+            const filtered = allMenu.filter(m => m.name.toLowerCase().includes(search));
+            document.getElementById('cashier-grid').innerHTML = filtered.map(item => `
+                <div onclick="window.addToCashierCart('${item.id}')" class="bg-white p-3 rounded-xl border border-slate-100 cursor-pointer hover:border-orange-400 transition group shadow-sm">
+                    <div class="h-24 w-full bg-slate-50 rounded-lg mb-2 overflow-hidden"><img src="${item.imageUrl || `https://placehold.co/200x200/f1f5f9/94a3b8?text=${item.name.charAt(0)}`}" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/200x200?text=Img'"></div>
+                    <h4 class="font-bold text-sm text-slate-800 truncate">${item.name}</h4>
+                    <p class="text-orange-600 text-sm font-bold">Rp ${parseInt(item.price).toLocaleString()}</p>
+                </div>
+            `).join('');
+        }
+
+        const menuForm = document.getElementById('add-menu-form');
+        menuForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = menuForm.querySelector('button'); const originalText = btn.innerText; btn.innerText = "Menyimpan..."; btn.disabled = true;
+            const fd = new FormData(menuForm);
+            try {
+                await addDoc(collection(db, COL_MENU), {
+                    name: fd.get('name'), price: parseInt(fd.get('price')), category: fd.get('category'),
+                    imageUrl: fd.get('imageUrl') || "", available: true, createdAt: serverTimestamp()
+                });
+                showToast('Menu Berhasil Disimpan!', 'success'); window.toggleModal('add-menu-modal'); menuForm.reset();
+            } catch(err) { showToast("Gagal: " + err.code, 'error'); } finally { btn.innerText = originalText; btn.disabled = false; }
+        });
+
+        function renderIncomingOrders(orders) {
+            const container = document.getElementById('incoming-orders-grid');
+            const noData = document.getElementById('no-incoming');
+            if(orders.length === 0) { container.innerHTML = ''; noData.classList.remove('hidden'); return; }
+            noData.classList.add('hidden');
+            container.innerHTML = orders.map(order => `
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                    <div class="flex justify-between mb-2"><span class="font-bold text-lg">${order.queueCode}</span><span class="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded">ONLINE</span></div>
+                    <div class="mb-2">
+                        <p class="font-bold text-sm">${order.customerName}</p>
+                        <p class="text-xs text-slate-500 flex items-center gap-1"><i class="fab fa-whatsapp"></i> ${order.customerPhone || '-'}</p>
+                        <p class="text-xs text-slate-500 truncate">${order.address}</p>
+                    </div>
+                    <div class="bg-slate-50 p-2 rounded text-xs mb-3 space-y-1">${order.items.map(i => `<div class="flex justify-between"><span>${i.qty}x ${i.name}</span><span>${(i.price*i.qty).toLocaleString()}</span></div>`).join('')}<div class="border-t pt-1 mt-1 flex justify-between font-bold"><span>Total</span><span>Rp ${parseInt(order.total).toLocaleString()}</span></div></div>
+                    <div class="flex gap-2">
+                        <button onclick="updateStatus('${order.id}', 'cancelled')" class="flex-1 py-2 rounded bg-red-50 text-red-500 text-xs font-bold">Tolak</button>
+                        <button onclick="confirmOrder('${order.id}', '${order.customerPhone}', '${order.customerName}', '${order.queueCode}')" class="flex-1 py-2 rounded bg-emerald-500 text-white text-xs font-bold flex items-center justify-center gap-1">
+                            <i class="fab fa-whatsapp"></i> Terima
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        window.confirmOrder = async (id, phone, name, code) => {
+            if(!confirm(`Terima pesanan ${code}?`)) return;
+            try {
+                // 1. Update status di DB
+                await updateDoc(doc(db, COL_ORDERS, id), { status: 'confirmed' });
+                showToast('Pesanan Diterima!', 'success');
+                
+                // 2. Format nomor WA: 08xx -> 628xx
+                let formattedPhone = phone;
+                if(formattedPhone.startsWith('0')) formattedPhone = '62' + formattedPhone.substring(1);
+                
+                // 3. Buka WA
+                const msg = `Halo Kak ${name}, pesanan kamu dengan kode *${code}* sudah kami konfirmasi dan sedang kami proses masak. Mohon ditunggu ya! 👩‍🍳🛵`;
+                const url = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(msg)}`;
+                window.open(url, '_blank');
+                
+            } catch(e) { showToast('Gagal update: ' + e.code, 'error'); }
+        };
+
+        window.updateStatus = async (id, st) => { try { await updateDoc(doc(db, COL_ORDERS, id), { status: st }); showToast(st==='confirmed'?'Pesanan Diterima':'Pesanan Ditolak', st==='confirmed'?'success':'info'); } catch(e) { showToast('Gagal: ' + e.code, 'error'); } };
+
+        function updateStats(orders) {
+            const today = new Date().toISOString().split('T')[0];
+            const valid = orders.filter(o => ['confirmed', 'completed'].includes(o.status) && o.timestamp && new Date(o.timestamp.seconds*1000).toISOString().split('T')[0] === today);
+            document.getElementById('daily-revenue').textContent = 'Rp ' + valid.reduce((a,b) => a + parseInt(b.total), 0).toLocaleString();
+            document.getElementById('daily-orders').textContent = valid.length;
+        }
+        
+        window.deleteMenu = async (id) => { if(confirm("Hapus menu?")) { try { await deleteDoc(doc(db, COL_MENU, id)); showToast("Menu dihapus"); } catch(e) { showToast("Gagal: "+e.code, 'error'); } } };
+        
+        window.addToCashierCart = (id) => { const item = allMenu.find(m => m.id === id); const exist = cashierCart.find(c => c.id === id); if(exist) exist.qty++; else cashierCart.push({...item, qty: 1}); renderCashierCart(); }
+        window.clearCashierCart = () => { cashierCart = []; renderCashierCart(); }
+        function renderCashierCart() {
+            const container = document.getElementById('cashier-cart-items'); const badge = document.getElementById('mobile-cart-badge'); const qty = cashierCart.reduce((a,b) => a+b.qty, 0);
+            badge.textContent = qty; badge.classList.toggle('hidden', qty === 0);
+            if(cashierCart.length === 0) { container.innerHTML = '<div class="text-center text-slate-400 py-10 text-sm">Keranjang kosong</div>'; document.getElementById('cashier-total').textContent = "Rp 0"; return; }
+            let total = 0;
+            container.innerHTML = cashierCart.map(item => { total += item.price * item.qty; return `<div class="flex justify-between text-sm border-b pb-2 border-slate-100 last:border-0"><div><span class="font-bold">${item.name}</span> <span class="text-xs text-slate-500">x${item.qty}</span></div><div class="font-bold text-slate-700">${(item.price*item.qty).toLocaleString()}</div></div>`; }).join('');
+            document.getElementById('cashier-total').textContent = 'Rp ' + total.toLocaleString();
+        }
+        window.setOrderType = (type) => { currentOrderType = type; document.querySelectorAll('.type-btn').forEach(btn => { if(btn.dataset.type === type) btn.className = "type-btn py-2 rounded-lg border text-sm font-medium transition bg-orange-50 border-orange-500 text-orange-700"; else btn.className = "type-btn py-2 rounded-lg border text-sm font-medium transition text-slate-600 border-slate-200 hover:bg-slate-50"; }); }
+        
+        window.processCashierOrder = async () => {
+            if(cashierCart.length === 0) return showToast("Keranjang Kosong!", 'error');
+            const custName = document.getElementById('cashier-customer-name').value.trim();
+            if(!custName) return showToast("Nama Pelanggan Wajib Diisi!", 'error');
+
+            const total = cashierCart.reduce((a,b) => a+(b.price*b.qty), 0);
+            const queueCode = generateQueueCode();
+
+            try {
+                const order = {
+                    items: cashierCart, total, status: 'completed', source: 'offline',
+                    type: currentOrderType, paymentMethod: 'Cash',
+                    customerName: custName, 
+                    timestamp: serverTimestamp(), queueCode
+                };
+                await addDoc(collection(db, COL_ORDERS), order);
+                showToast("Transaksi Berhasil!", 'success');
+                window.printOrder({...order, timestamp: {seconds: Date.now()/1000}, deliveryFee: 0});
+                clearCashierCart();
+                document.getElementById('cashier-customer-name').value = "";
+            } catch(e) { showToast("Gagal Transaksi: " + e.code, 'error'); }
+        }
+
+        window.printOrder = (o) => {
+            document.getElementById('print-queue').textContent = o.queueCode;
+            document.getElementById('print-name').textContent = "PELANGGAN: " + (o.customerName || 'NONAME').toUpperCase();
+            document.getElementById('print-items').innerHTML = o.items.map(i => `<div class="flex justify-between mb-1"><span>${i.qty} ${i.name}</span><span>${(i.price*i.qty).toLocaleString()}</span></div>`).join('');
+            document.getElementById('print-fee').textContent = (o.deliveryFee||0).toLocaleString();
+            document.getElementById('print-total').textContent = parseInt(o.total).toLocaleString();
+            window.print();
+        }
+
+        window.loadHistory = async (orders = null) => {
+             if(!orders) { const snap = await getDocs(collection(db, COL_ORDERS)); orders = snap.docs.map(d => ({id: d.id, ...d.data()})); }
+             const dateInput = document.getElementById('filter-date').value;
+             let filtered = orders.filter(o => ['confirmed', 'completed'].includes(o.status));
+             if(dateInput) filtered = filtered.filter(o => o.timestamp && new Date(o.timestamp.seconds*1000).toISOString().split('T')[0] === dateInput);
+             filtered.sort((a,b) => b.timestamp?.seconds - a.timestamp?.seconds);
+             
+             document.getElementById('history-table-body').innerHTML = filtered.map(o => `
+                <tr class="border-b border-slate-100 hover:bg-white">
+                    <td class="p-4 text-xs">${new Date(o.timestamp.seconds*1000).toLocaleString()}</td>
+                    <td class="p-4 font-bold">${o.queueCode}</td>
+                    <td class="p-4 font-bold text-slate-600 text-xs uppercase">${o.customerName || '-'}</td>
+                    <td class="p-4"><span class="px-2 py-1 rounded text-xs font-bold ${o.source === 'online' ? 'bg-blue-50 text-blue-600' : 'bg-orange-50 text-orange-600'}">${o.source.toUpperCase()}</span></td>
+                    <td class="p-4 font-bold text-emerald-600">Rp ${parseInt(o.total).toLocaleString()}</td>
+                    <td class="p-4 text-center"><button onclick='window.printOrder(${JSON.stringify(o)})'><i class="fas fa-print text-slate-400 hover:text-black"></i></button></td>
+                </tr>
+             `).join('');
+        }
+
+        document.getElementById('cashier-search').addEventListener('input', renderCashierGrid);
+        window.toggleModal = (id) => { const el=document.getElementById(id); el.classList.toggle('hidden'); el.classList.toggle('flex'); }
+        window.toggleSidebar = () => { const sb = document.getElementById('sidebar'); const ov = document.getElementById('mobile-overlay'); sb.classList.toggle('sidebar-closed'); ov.classList.toggle('hidden'); }
+        window.toggleCashierPanelMobile = () => document.getElementById('cashier-panel').classList.toggle('translate-y-full');
+        window.switchTab = (id) => { document.querySelectorAll('.view-section').forEach(e => e.classList.add('hidden')); document.getElementById('view-'+id).classList.remove('hidden'); document.querySelectorAll('.nav-item').forEach(e => { e.classList.remove('bg-white/10', 'text-white'); e.classList.add('text-slate-300'); }); document.getElementById('nav-'+id).classList.add('bg-white/10', 'text-white'); if(window.innerWidth < 768) window.toggleSidebar(); }
+        switchTab('dashboard');
+    </script>
+</body>
+</html>
+
+
