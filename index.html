@@ -61,7 +61,8 @@
     <div id="toast-container" class="fixed top-5 right-5 z-[100] flex flex-col gap-2 w-80 pointer-events-none"></div>
 
     <!-- Mobile Overlay -->
-    <div id="mobile-overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/50 z-20 hidden md:hidden backdrop-blur-sm"></div>
+    <!-- PERBAIKAN 1: onclick diubah untuk menutup semua popup -->
+    <div id="mobile-overlay" onclick="closeAllPopups()" class="fixed inset-0 bg-black/50 z-20 hidden md:hidden backdrop-blur-sm"></div>
 
     <!-- Sidebar -->
     <aside class="fixed md:static inset-y-0 left-0 z-30 w-64 bg-slate-900 text-white flex flex-col transition-transform duration-300 sidebar-closed md:transform-none shadow-xl" id="sidebar">
@@ -70,6 +71,7 @@
                 <div class="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center font-bold text-lg">R</div>
                 <h1 class="text-lg font-bold tracking-tight">RUMAH KITA</h1>
             </div>
+            <!-- PERBAIKAN 1: Tombol 'x' di sidebar juga menggunakan toggleSidebar, yang sudah kita perbarui logikanya -->
             <button onclick="toggleSidebar()" class="md:hidden text-gray-400 hover:text-white"><i class="fas fa-times"></i></button>
         </div>
 
@@ -200,7 +202,8 @@
                             <i class="fas fa-plus"></i> Tambah
                         </button>
                     </div>
-                    <div class="overflow-x-auto max-h-64">
+                    <!-- PERBAIKAN 2: diubah dari overflow-x-auto menjadi overflow-auto -->
+                    <div class="overflow-auto max-h-64">
                         <table class="w-full text-left text-sm">
                             <thead class="bg-slate-50 text-slate-500 font-semibold uppercase text-xs sticky top-0 z-10">
                                 <tr>
@@ -258,6 +261,7 @@
                 </div>
                 
                 <div class="w-full md:w-96 bg-white md:border border-slate-200 flex flex-col shadow-2xl md:shadow-none fixed md:static bottom-0 left-0 right-0 h-[70vh] md:h-full z-20 rounded-t-3xl transform transition-transform duration-300 translate-y-full md:translate-y-0" id="cashier-panel">
+                    <!-- PERBAIKAN 1: Grabber handle ini sekarang juga bisa menutup panel via overlay -->
                     <div class="md:hidden w-full flex justify-center pt-2 pb-1 cursor-pointer" onclick="toggleCashierPanelMobile()">
                         <div class="w-12 h-1.5 bg-slate-300 rounded-full"></div>
                     </div>
@@ -405,12 +409,11 @@
             container.appendChild(el);
             requestAnimationFrame(() => { el.classList.remove('toast-enter'); el.classList.add('toast-enter-active'); });
             
-            // --- PERBAIKAN: "duration = 3000" diubah menjadi "3000" ---
             setTimeout(() => { 
                 el.classList.remove('toast-enter-active'); 
                 el.classList.add('toast-exit-active'); 
                 setTimeout(() => el.remove(), 300); 
-            }, 3000); // <-- Kesalahan "duration is not defined" diperbaiki di sini
+            }, 3000); 
         }
 
         function generateQueueCode() {
@@ -466,7 +469,7 @@
             onSnapshot(collection(db, COL_MENU), (snap) => {
                 allMenu = snap.docs.map(d => ({id: d.id, ...d.data()}));
                 renderMenuTable();
-                renderCashierGrid(); // <-- Sekarang fungsi ini ada
+                renderCashierGrid(); 
                 document.getElementById('total-menu').textContent = allMenu.length;
             });
 
@@ -689,8 +692,6 @@
         window.updateStatus = async (id, st) => { try { await updateDoc(doc(db, COL_ORDERS, id), { status: st }); showToast(st==='confirmed'?'Pesanan Diterima':'Pesanan Ditolak'); } catch(e) { showToast('Gagal: ' + e.code, 'error'); } };
         window.deleteMenu = async (id) => { if(confirm("Hapus menu?")) { try { await deleteDoc(doc(db, COL_MENU, id)); showToast("Menu dihapus"); } catch(e) { showToast("Gagal: "+e.code, 'error'); } } };
         
-
-        // --- PENAMBAHAN: Fungsi renderCashierGrid yang hilang ---
         function renderCashierGrid() {
             const container = document.getElementById('cashier-grid');
             const search = document.getElementById('cashier-search').value.toLowerCase();
@@ -781,9 +782,76 @@
 
         document.getElementById('cashier-search').addEventListener('input', renderCashierGrid);
         window.toggleModal = (id) => { const el=document.getElementById(id); el.classList.toggle('hidden'); el.classList.toggle('flex'); }
-        window.toggleSidebar = () => { const sb = document.getElementById('sidebar'); const ov = document.getElementById('mobile-overlay'); sb.classList.toggle('sidebar-closed'); ov.classList.toggle('hidden'); }
-        window.toggleCashierPanelMobile = () => document.getElementById('cashier-panel').classList.toggle('translate-y-full');
-        window.switchTab = (id) => { document.querySelectorAll('.view-section').forEach(e => e.classList.add('hidden')); document.getElementById('view-'+id).classList.remove('hidden'); document.querySelectorAll('.nav-item').forEach(e => { e.classList.remove('bg-white/10', 'text-white'); e.classList.add('text-slate-300'); }); document.getElementById('nav-'+id).classList.add('bg-white/10', 'text-white'); if(window.innerWidth < 768) window.toggleSidebar(); }
+        
+        // --- PERBAIKAN 1: LOGIKA BUKA/TUTUP SIDEBAR & PANEL KASIR ---
+
+        // Fungsi baru untuk menutup SEMUA popup/overlay
+        function closeAllPopups() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('mobile-overlay');
+            const cashierPanel = document.getElementById('cashier-panel');
+            
+            // Cek dan tutup sidebar
+            if (!sidebar.classList.contains('sidebar-closed')) { 
+                sidebar.classList.add('sidebar-closed'); 
+            }
+            
+            // Cek dan tutup panel kasir
+            if (cashierPanel && !cashierPanel.classList.contains('translate-y-full')) { 
+                cashierPanel.classList.add('translate-y-full'); 
+            }
+            // Selalu sembunyikan overlay
+            overlay.classList.add('hidden');
+        }
+        window.closeAllPopups = closeAllPopups;
+
+        // Modifikasi toggleSidebar agar "pintar"
+        window.toggleSidebar = () => { 
+            const sb = document.getElementById('sidebar'); 
+            const ov = document.getElementById('mobile-overlay'); 
+            const cashierPanel = document.getElementById('cashier-panel');
+            
+            // Jika panel kasir terbuka, tutup dulu
+            if (cashierPanel && !cashierPanel.classList.contains('translate-y-full')) {
+                cashierPanel.classList.add('translate-y-full');
+            }
+            
+            // Lakukan toggle seperti biasa untuk sidebar & overlay
+            sb.classList.toggle('sidebar-closed'); 
+            ov.classList.toggle('hidden'); 
+        }
+        
+        // Modifikasi toggleCashierPanelMobile agar "pintar"
+        window.toggleCashierPanelMobile = () => {
+            const sb = document.getElementById('sidebar'); 
+            const ov = document.getElementById('mobile-overlay'); 
+            const cashierPanel = document.getElementById('cashier-panel');
+
+            // Jika sidebar terbuka, tutup dulu
+            if (!sb.classList.contains('sidebar-closed')) {
+                sb.classList.add('sidebar-closed');
+            }
+
+            // Lakukan toggle untuk panel kasir & overlay
+            cashierPanel.classList.toggle('translate-y-full'); 
+            ov.classList.toggle('hidden');
+        }
+        
+        window.switchTab = (id) => { 
+            document.querySelectorAll('.view-section').forEach(e => e.classList.add('hidden')); 
+            document.getElementById('view-'+id).classList.remove('hidden'); 
+            document.querySelectorAll('.nav-item').forEach(e => { 
+                e.classList.remove('bg-white/10', 'text-white'); 
+                e.classList.add('text-slate-300'); 
+            }); 
+            document.getElementById('nav-'+id).classList.add('bg-white/10', 'text-white'); 
+            
+            // Jika pindah tab, selalu tutup popup
+            if(window.innerWidth < 768) {
+                closeAllPopups();
+            } 
+        }
+        
         switchTab('dashboard');
     </script>
 </body>
