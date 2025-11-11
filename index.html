@@ -404,7 +404,13 @@
             el.innerHTML = `<div>${type==='success'?'<i class="fas fa-check"></i>':'<i class="fas fa-info"></i>'}</div><div class="flex-1">${msg}</div>`;
             container.appendChild(el);
             requestAnimationFrame(() => { el.classList.remove('toast-enter'); el.classList.add('toast-enter-active'); });
-            setTimeout(() => { el.classList.remove('toast-enter-active'); el.classList.add('toast-exit-active'); setTimeout(() => el.remove(), 300); }, 3000);
+            
+            // --- PERBAIKAN: "duration = 3000" diubah menjadi "3000" ---
+            setTimeout(() => { 
+                el.classList.remove('toast-enter-active'); 
+                el.classList.add('toast-exit-active'); 
+                setTimeout(() => el.remove(), 300); 
+            }, 3000); // <-- Kesalahan "duration is not defined" diperbaiki di sini
         }
 
         function generateQueueCode() {
@@ -460,7 +466,7 @@
             onSnapshot(collection(db, COL_MENU), (snap) => {
                 allMenu = snap.docs.map(d => ({id: d.id, ...d.data()}));
                 renderMenuTable();
-                renderCashierGrid();
+                renderCashierGrid(); // <-- Sekarang fungsi ini ada
                 document.getElementById('total-menu').textContent = allMenu.length;
             });
 
@@ -683,6 +689,33 @@
         window.updateStatus = async (id, st) => { try { await updateDoc(doc(db, COL_ORDERS, id), { status: st }); showToast(st==='confirmed'?'Pesanan Diterima':'Pesanan Ditolak'); } catch(e) { showToast('Gagal: ' + e.code, 'error'); } };
         window.deleteMenu = async (id) => { if(confirm("Hapus menu?")) { try { await deleteDoc(doc(db, COL_MENU, id)); showToast("Menu dihapus"); } catch(e) { showToast("Gagal: "+e.code, 'error'); } } };
         
+
+        // --- PENAMBAHAN: Fungsi renderCashierGrid yang hilang ---
+        function renderCashierGrid() {
+            const container = document.getElementById('cashier-grid');
+            const search = document.getElementById('cashier-search').value.toLowerCase();
+            
+            let filtered = allMenu;
+            if(search) {
+                filtered = allMenu.filter(m => m.name.toLowerCase().includes(search));
+            }
+
+            if(filtered.length === 0) {
+                container.innerHTML = '<p class="text-slate-400 col-span-2 lg:col-span-3 text-center">Menu tidak ditemukan.</p>';
+                return;
+            }
+
+            container.innerHTML = filtered.map(item => `
+                <button onclick="addToCashierCart('${item.id}')" class="text-left bg-white rounded-xl border border-slate-100 shadow-sm p-3 transition hover:border-orange-500 hover:ring-1 hover:ring-orange-500 active:scale-95">
+                    <div class="w-full h-24 bg-slate-100 rounded-lg overflow-hidden mb-2">
+                        <img src="${item.imageUrl || `https://placehold.co/100x100?text=${item.name.charAt(0)}`}" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/100x100?text=${item.name.charAt(0)}'">
+                    </div>
+                    <p class="text-sm font-bold truncate text-slate-800">${item.name}</p>
+                    <p class="text-xs font-bold text-orange-600">Rp ${parseInt(item.price).toLocaleString()}</p>
+                </button>
+            `).join('');
+        }
+
         // Cashier Cart Logic
         window.addToCashierCart = (id) => { const item = allMenu.find(m => m.id === id); const exist = cashierCart.find(c => c.id === id); if(exist) exist.qty++; else cashierCart.push({...item, qty: 1}); renderCashierCart(); }
         window.clearCashierCart = () => { cashierCart = []; renderCashierCart(); }
@@ -755,5 +788,3 @@
     </script>
 </body>
 </html>
-
-
