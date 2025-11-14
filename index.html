@@ -57,33 +57,42 @@
 </head>
 <body class="text-slate-800 h-screen flex overflow-hidden bg-slate-50">
 
+    <!-- Toast Container -->
     <div id="toast-container" class="fixed top-5 right-5 z-[100] flex flex-col gap-2 w-80 pointer-events-none"></div>
 
+    <!-- Mobile Overlay -->
+    <!-- PERBAIKAN 1: onclick diubah untuk menutup semua popup -->
     <div id="mobile-overlay" onclick="closeAllPopups()" class="fixed inset-0 bg-black/50 z-20 hidden md:hidden backdrop-blur-sm"></div>
 
+    <!-- Sidebar -->
     <aside class="fixed md:static inset-y-0 left-0 z-30 w-64 bg-slate-900 text-white flex flex-col transition-transform duration-300 sidebar-closed md:transform-none shadow-xl" id="sidebar">
         <div class="p-6 flex items-center justify-between border-b border-slate-800">
             <div class="flex items-center gap-3">
                 <div class="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center font-bold text-lg">R</div>
                 <h1 class="text-lg font-bold tracking-tight">RUMAH KITA</h1>
             </div>
+            <!-- PERBAIKAN 1: Tombol 'x' di sidebar juga menggunakan toggleSidebar, yang sudah kita perbarui logikanya -->
             <button onclick="toggleSidebar()" class="md:hidden text-gray-400 hover:text-white"><i class="fas fa-times"></i></button>
         </div>
 
         <nav class="flex-1 overflow-y-auto py-4 space-y-1 px-3">
+            <!-- Dashboard -->
             <button onclick="switchTab('dashboard')" class="nav-item w-full text-left px-4 py-3 rounded-xl hover:bg-white/10 transition flex items-center gap-3 text-slate-300" id="nav-dashboard">
                 <i class="fas fa-chart-pie w-5"></i> Dashboard & Laporan
             </button>
             
+            <!-- Pesanan Masuk (Pending) -->
             <button onclick="switchTab('incoming')" class="nav-item w-full text-left px-4 py-3 rounded-xl hover:bg-white/10 transition flex items-center gap-3 text-slate-300 relative" id="nav-incoming">
                 <i class="fas fa-bell w-5"></i> Pesanan Masuk
                 <span id="notif-badge" class="hidden absolute right-3 bg-rose-500 text-white text-[10px] px-2 py-0.5 rounded-full animate-pulse">0</span>
             </button>
 
+            <!-- Pesanan Diterima (Confirmed/History) -->
             <button onclick="switchTab('accepted')" class="nav-item w-full text-left px-4 py-3 rounded-xl hover:bg-white/10 transition flex items-center gap-3 text-slate-300" id="nav-accepted">
                 <i class="fas fa-clipboard-check w-5"></i> Pesanan Diterima
             </button>
             
+            <!-- Kasir -->
             <button onclick="switchTab('cashier')" class="nav-item w-full text-left px-4 py-3 rounded-xl hover:bg-white/10 transition flex items-center gap-3 text-slate-300" id="nav-cashier">
                 <i class="fas fa-cash-register w-5"></i> Kasir (POS)
             </button>
@@ -99,22 +108,18 @@
         </div>
     </aside>
 
+    <!-- Main Content -->
     <main class="flex-1 flex flex-col h-full overflow-hidden relative w-full">
         <header class="bg-white h-16 border-b border-slate-200 flex items-center justify-between px-4 md:px-8 z-10">
             <div class="flex items-center gap-4">
-                <button onclick="toggleSidebar()" class="md:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-lg relative" id="mobile-sidebar-toggle">
+                <button onclick="toggleSidebar()" class="md:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-lg">
                     <i class="fas fa-bars text-xl"></i>
-                    <span id="mobile-notif-dot" class="absolute top-1 right-1 w-2.5 h-2.5 bg-rose-500 rounded-full animate-pulse hidden border border-white"></span>
                 </button>
                 <h2 id="page-title" class="text-lg md:text-xl font-bold text-slate-800">Dashboard</h2>
             </div>
             <div class="flex items-center gap-4">
-                <button onclick="toggleFullscreen()" class="w-8 h-8 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center shadow-sm hover:bg-slate-200 transition hidden md:flex">
-                    <i class="fas fa-expand text-xs" id="fullscreen-icon"></i>
-                </button>
-                
                 <div class="text-right hidden md:block">
-                    <p class="text-sm font-bold text-slate-700" id="current-time">--:--:--</p>
+                    <p class="text-sm font-bold text-slate-700" id="current-time">--:--</p>
                     <p class="text-xs text-slate-500" id="current-date">Loading...</p>
                 </div>
                 <div class="h-9 w-9 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center border border-orange-200">
@@ -125,7 +130,9 @@
 
         <div class="flex-1 overflow-y-auto p-4 md:p-8 relative scroll-smooth bg-slate-50" id="content-area">
             
+            <!-- 1. DASHBOARD & LAPORAN -->
             <div id="view-dashboard" class="view-section space-y-8">
+                <!-- Quick Stats -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
                     <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm border-l-4 border-l-emerald-500">
                         <p class="text-slate-500 text-xs uppercase font-bold mb-1">Omzet Hari Ini</p>
@@ -141,6 +148,7 @@
                     </div>
                 </div>
 
+                <!-- Laporan Section -->
                 <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
                     <div class="p-6 border-b border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4">
                         <div>
@@ -154,6 +162,7 @@
                     </div>
                     
                     <div class="p-6">
+                        <!-- Filter Date -->
                         <div class="flex gap-2 mb-4">
                             <input type="date" id="report-date" class="border rounded-lg px-3 py-2 text-sm outline-none focus:border-orange-500 bg-slate-50">
                             <button onclick="printReport()" class="bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-black flex items-center gap-2">
@@ -171,7 +180,8 @@
                                     </tr>
                                 </thead>
                                 <tbody id="report-table-body" class="divide-y divide-slate-100">
-                                    </tbody>
+                                    <!-- Data Injected Here -->
+                                </tbody>
                                 <tfoot class="bg-slate-50 font-bold">
                                     <tr>
                                         <td class="p-4">TOTAL</td>
@@ -184,6 +194,7 @@
                     </div>
                 </div>
 
+                <!-- Menu Management (Minimized) -->
                 <div class="bg-white rounded-2xl border border-slate-100 shadow-sm">
                     <div class="p-6 border-b border-slate-100 flex justify-between items-center">
                         <h3 class="text-lg font-bold text-slate-800">Daftar Menu</h3>
@@ -191,6 +202,7 @@
                             <i class="fas fa-plus"></i> Tambah
                         </button>
                     </div>
+                    <!-- PERBAIKAN 2: diubah dari overflow-x-auto menjadi overflow-auto -->
                     <div class="overflow-auto max-h-64">
                         <table class="w-full text-left text-sm">
                             <thead class="bg-slate-50 text-slate-500 font-semibold uppercase text-xs sticky top-0 z-10">
@@ -207,6 +219,7 @@
                 </div>
             </div>
 
+            <!-- 2. PESANAN MASUK (PENDING) -->
             <div id="view-incoming" class="view-section hidden space-y-6">
                  <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-4 flex gap-3 items-start">
                     <i class="fas fa-info-circle text-indigo-500 mt-1"></i>
@@ -222,6 +235,7 @@
                 </div>
             </div>
 
+            <!-- 3. PESANAN DITERIMA (ACCEPTED/CONFIRMED) -->
             <div id="view-accepted" class="view-section hidden space-y-6">
                 <div class="flex justify-between items-center">
                     <h3 class="text-xl font-bold text-slate-800">Pesanan Diterima & Selesai</h3>
@@ -229,10 +243,12 @@
                 </div>
                 
                 <div id="accepted-orders-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    </div>
+                    <!-- Cards Injected Here -->
+                </div>
                 <div id="no-accepted" class="hidden text-center text-slate-400 py-10">Belum ada pesanan diterima.</div>
             </div>
 
+            <!-- 4. CASHIER MODE -->
             <div id="view-cashier" class="view-section hidden h-full flex flex-col md:flex-row gap-4 pb-20 md:pb-0">
                 <div class="flex-1 flex flex-col h-full overflow-hidden">
                      <div class="mb-4 relative">
@@ -245,6 +261,7 @@
                 </div>
                 
                 <div class="w-full md:w-96 bg-white md:border border-slate-200 flex flex-col shadow-2xl md:shadow-none fixed md:static bottom-0 left-0 right-0 h-[70vh] md:h-full z-20 rounded-t-3xl transform transition-transform duration-300 translate-y-full md:translate-y-0" id="cashier-panel">
+                    <!-- PERBAIKAN 1: Grabber handle ini sekarang juga bisa menutup panel via overlay -->
                     <div class="md:hidden w-full flex justify-center pt-2 pb-1 cursor-pointer" onclick="toggleCashierPanelMobile()">
                         <div class="w-12 h-1.5 bg-slate-300 rounded-full"></div>
                     </div>
@@ -281,6 +298,7 @@
         </div>
     </main>
 
+    <!-- Add Menu Modal -->
     <div id="add-menu-modal" class="fixed inset-0 bg-black/60 hidden items-center justify-center z-50 backdrop-blur-sm p-4">
         <div class="bg-white rounded-2xl w-full max-w-md shadow-2xl">
             <div class="p-5 border-b border-slate-100 flex justify-between items-center">
@@ -315,6 +333,7 @@
         </div>
     </div>
 
+    <!-- Receipt Print Template (STRUK BELANJA) -->
     <div id="print-area" class="hidden bg-white p-2 font-mono text-[10px] text-black w-[250px]">
         <div class="text-center mb-3 border-b border-dashed border-black pb-2">
             <h2 class="font-bold text-sm">OUTLET RUMAH KITA</h2>
@@ -326,8 +345,12 @@
             <div class="flex justify-between"><span>Plg:</span><span id="print-name" class="uppercase font-bold">-</span></div>
             <div class="flex justify-between"><span>Tipe:</span><span id="print-type">-</span></div>
         </div>
+        
+        <!-- Rincian Belanja -->
         <div id="print-items" class="mb-3">
-            </div>
+            <!-- Items injected here -->
+        </div>
+        
         <div class="border-t border-dashed border-black pt-2 space-y-1">
             <div class="flex justify-between"><span>Subtotal</span><span id="print-subtotal">0</span></div>
             <div class="flex justify-between"><span>Ongkir</span><span id="print-fee">0</span></div>
@@ -336,97 +359,80 @@
                 <span id="print-total">0</span>
             </div>
         </div>
-        <div class="text-center mt-4 pt-2 border-t border-black border-dashed">
-            <p class="text-[8px]">TERIMA KASIH TELAH BERBELANJA</p>
-            <p class="text-[8px]">CEK STATUS VIA WA</p>
+        <div class="text-center mt-4 pt-2 border-t border-black">
+            <p>Terima Kasih!</p>
+            <p class="text-[8px] mt-1">Simpan struk ini sebagai bukti pembayaran.</p>
         </div>
     </div>
-    
-    <div id="report-print-area" class="hidden bg-white p-4 font-sans text-xs text-black w-[600px]">
-        <div class="text-center mb-6">
-            <h2 class="font-bold text-lg">OUTLET RUMAH KITA</h2>
-            <p class="text-sm" id="print-report-date">Laporan Penjualan</p>
-            <p class="text-xs text-gray-600" id="print-report-time">Cetak: -</p>
+
+    <!-- Report Print Template (LAPORAN) -->
+    <div id="report-print-area" class="hidden bg-white p-10 text-black font-sans">
+        <div class="text-center mb-8 border-b-2 border-black pb-4">
+            <h1 class="text-3xl font-bold uppercase">Laporan Penjualan</h1>
+            <h2 class="text-xl mt-2">Outlet Rumah Kita</h2>
+            <p id="print-report-date" class="text-md text-gray-600 mt-2">Periode: -</p>
         </div>
-        <div class="border border-gray-300 rounded overflow-hidden">
-            <table class="w-full text-left text-xs">
-                <thead class="bg-gray-100 font-bold uppercase text-[10px]">
-                    <tr>
-                        <th class="py-3 px-2 w-1/2" id="print-report-col-1">Tanggal</th>
-                        <th class="py-3 px-2 text-right">Jumlah Pesanan</th>
-                        <th class="py-3 px-2 text-right">Total Omzet</th>
-                    </tr>
-                </thead>
-                <tbody id="print-report-body" class="divide-y divide-gray-200">
-                    </tbody>
-                <tfoot class="bg-gray-100 font-bold">
-                    <tr>
-                        <td class="py-3 px-2">TOTAL</td>
-                        <td class="py-3 px-2 text-right" id="print-report-total-count">0</td>
-                        <td class="py-3 px-2 text-right" id="print-report-total-revenue">Rp 0</td>
-                    </tr>
-                </tfoot>
-            </table>
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="border-b-2 border-black bg-gray-50">
+                    <th class="py-3 px-2">Tanggal / Periode</th>
+                    <th class="py-3 px-2 text-right">Jumlah Transaksi</th>
+                    <th class="py-3 px-2 text-right">Total Omzet</th>
+                </tr>
+            </thead>
+            <tbody id="print-report-body"></tbody>
+            <tfoot>
+                <tr class="border-t-2 border-black font-bold text-xl bg-gray-50">
+                    <td class="py-4 px-2">TOTAL KESELURUHAN</td>
+                    <td class="py-4 px-2 text-right" id="print-report-count">0</td>
+                    <td class="py-4 px-2 text-right" id="print-report-revenue">0</td>
+                </tr>
+            </tfoot>
+        </table>
+        <div class="mt-12 text-sm text-gray-500 text-center border-t pt-4 w-64 mx-auto">
+            <p>Dicetak pada: <span id="print-timestamp"></span></p>
+            <p>Admin Outlet Rumah Kita</p>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp, getDocs, query, where, documentId, deleteDoc, doc, updateDoc, orderBy, limit } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, addDoc, updateDoc, deleteDoc, onSnapshot, collection, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // --- GLOBAL UTILS ---
-        function showToast(msg, icon='info') {
-            const box = document.getElementById('toast-container');
+        function showToast(msg, type = 'success') {
+            const container = document.getElementById('toast-container');
             const el = document.createElement('div');
-            const iconHtml = icon === 'success' ? '<i class="fas fa-check-circle text-emerald-400"></i>' : (icon === 'error' ? '<i class="fas fa-exclamation-triangle text-red-400"></i>' : '<i class="fas fa-info-circle text-blue-400"></i>');
-            el.className = 'bg-white shadow-xl rounded-xl p-4 text-slate-800 flex items-center gap-3 toast-enter';
-            el.innerHTML = `${iconHtml} <span class="text-sm font-medium">${msg}</span>`;
-            
-            box.appendChild(el);
+            const colors = type === 'success' ? 'bg-emerald-500 text-white' : (type === 'error' ? 'bg-red-500 text-white' : 'bg-slate-800 text-white');
+            el.className = `pointer-events-auto p-4 rounded-xl shadow-lg flex items-start gap-3 text-sm font-bold toast-enter ${colors} mb-2`;
+            el.innerHTML = `<div>${type==='success'?'<i class="fas fa-check"></i>':'<i class="fas fa-info"></i>'}</div><div class="flex-1">${msg}</div>`;
+            container.appendChild(el);
             requestAnimationFrame(() => { el.classList.remove('toast-enter'); el.classList.add('toast-enter-active'); });
             
             setTimeout(() => { 
-                el.classList.remove('toast-enter-active');
-                el.classList.add('toast-exit-active');
-                setTimeout(() => el.remove(), 300);
-            }, 3000);
+                el.classList.remove('toast-enter-active'); 
+                el.classList.add('toast-exit-active'); 
+                setTimeout(() => el.remove(), 300); 
+            }, 3000); 
         }
 
         function generateQueueCode() {
             const now = new Date();
             const d = String(now.getDate()).padStart(2, '0');
             const m = String(now.getMonth() + 1).padStart(2, '0');
-            const r = Math.floor(1000 + Math.random() * 9000);
+            const r = Math.floor(1000 + Math.random() * 9000); 
             return `Q-${d}${m}-${r}`;
         }
-        
-        // NEW: Fungsi untuk toggle fullscreen
-        window.toggleFullscreen = () => {
-            const icon = document.getElementById('fullscreen-icon');
-            if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen().then(() => {
-                    icon.className = 'fas fa-compress text-xs';
-                }).catch(err => {
-                    showToast(`Gagal Fullscreen: ${err.message}`, 'error');
-                });
-            } else {
-                document.exitFullscreen().then(() => {
-                    icon.className = 'fas fa-expand text-xs';
-                });
-            }
-        }
-        document.addEventListener('fullscreenchange', () => {
-            const icon = document.getElementById('fullscreen-icon');
-            if (document.fullscreenElement) {
-                icon.className = 'fas fa-compress text-xs';
-            } else {
-                icon.className = 'fas fa-expand text-xs';
-            }
-        });
 
-        // --- FIREBASE SETUP ---
-        const firebaseConfig = { apiKey: "AIzaSyCVl_0OhaCKRiJ5-qPKwaoMs3q11tHRbys", authDomain: "outlet-rumah-kita.firebaseapp.com", projectId: "outlet-rumah-kita", storageBucket: "outlet-rumah-kita.firebasestorage.app", messagingSenderId: "1081923667869", appId: "1:1081923667869:web:797fce3cc6de79d2c69174" };
+        const firebaseConfig = {
+            apiKey: "AIzaSyCVl_0OhaCKRiJ5-qPKwaoMs3q11tHRbys",
+            authDomain: "outlet-rumah-kita.firebaseapp.com",
+            projectId: "outlet-rumah-kita",
+            storageBucket: "outlet-rumah-kita.firebasestorage.app",
+            messagingSenderId: "1081923667869",
+            appId: "1:1081923667869:web:797fce3cc6de79d2c69174"
+        };
+
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
@@ -450,124 +456,82 @@
             document.getElementById('connection-status').innerHTML = '<span class="w-2 h-2 bg-red-500 rounded-full"></span> Error';
         });
 
-        // MODIFIKASI: Ganti interval ke 1 detik
-        updateTime(); 
-        setInterval(updateTime, 1000); 
-        
-        // MODIFIKASI: Fungsi updateTime menyertakan detik
-        function updateTime() { 
+        setInterval(updateTime, 60000);
+
+        function updateTime() {
             const now = new Date();
-            document.getElementById('current-time').textContent = now.toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit', second:'2-digit'});
-            document.getElementById('current-date').textContent = now.toLocaleDateString('id-ID', {day: 'numeric', month:'long', year:'numeric'});
+            document.getElementById('current-time').textContent = now.toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'});
+            document.getElementById('current-date').textContent = now.toLocaleDateString('id-ID', {weekday: 'short', day: 'numeric', month: 'short'});
+            document.getElementById('report-date').value = now.toISOString().split('T')[0];
         }
 
-        // NEW: Fungsi untuk update badge notif di sidebar DAN mobile toggle
-        function updateNotificationBadges(count) {
-            const badge = document.getElementById('notif-badge'); // Sidebar badge
-            const dot = document.getElementById('mobile-notif-dot'); // Mobile hamburger dot
-            
-            badge.textContent = count;
-            badge.classList.toggle('hidden', count === 0);
-            dot.classList.toggle('hidden', count === 0); // Tampilkan/sembunyikan dot merah
-        }
-
-
-        // --- LISTENERS ---
         function initListeners() {
-            // 1. Menu Listener
-            onSnapshot(collection(db, COL_MENU), (snapshot) => {
-                allMenu = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            onSnapshot(collection(db, COL_MENU), (snap) => {
+                allMenu = snap.docs.map(d => ({id: d.id, ...d.data()}));
                 renderMenuTable();
-                renderCashierGrid();
+                renderCashierGrid(); 
                 document.getElementById('total-menu').textContent = allMenu.length;
             });
 
-            // 2. Incoming Orders Listener
-            const qIncoming = query(collection(db, COL_ORDERS), where('status', '==', 'pending'), orderBy('timestamp', 'asc'));
-            onSnapshot(qIncoming, (snapshot) => {
-                const orders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                renderIncomingOrders(orders);
-                const count = orders.length;
-                updateNotificationBadges(count); // MODIFIKASI: Panggil fungsi baru
-            });
+            onSnapshot(collection(db, COL_ORDERS), (snap) => {
+                allOrdersCache = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                
+                const pending = allOrdersCache.filter(o => o.status === 'pending' && o.source === 'online');
+                const accepted = allOrdersCache.filter(o => ['confirmed', 'completed'].includes(o.status));
 
-            // 3. Accepted Orders Listener
-            const qAccepted = query(collection(db, COL_ORDERS), where('status', 'in', ['confirmed', 'completed', 'cancelled']), orderBy('timestamp', 'desc'), limit(50));
-            onSnapshot(qAccepted, (snapshot) => {
-                allOrdersCache = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                renderAcceptedOrders();
-                updateReport();
-                updateDashboardStats(allOrdersCache);
+                // Badge notification
+                const badge = document.getElementById('notif-badge');
+                if(pending.length > 0) {
+                    badge.textContent = pending.length;
+                    badge.classList.remove('hidden');
+                } else {
+                    badge.classList.add('hidden');
+                }
+
+                renderIncomingOrders(pending);
+                renderAcceptedOrders(accepted);
+                updateDashboardStats(accepted);
+                renderReportTable(); // Refresh reports
             });
-            
-            // Initial render
-            updateReport();
         }
 
-        // --- DASHBOARD FUNCTIONS ---
-        function updateDashboardStats(orders) {
-            const today = new Date().toISOString().split('T')[0];
-            const todayOrders = orders.filter(o => {
-                const orderDate = new Date(o.timestamp.seconds * 1000).toISOString().split('T')[0];
-                return orderDate === today && o.status === 'completed';
-            });
-
-            const dailyRevenue = todayOrders.reduce((sum, o) => sum + parseInt(o.total || 0), 0);
-            const dailyOrders = todayOrders.length;
-
-            document.getElementById('daily-revenue').textContent = 'Rp ' + dailyRevenue.toLocaleString();
-            document.getElementById('daily-orders').textContent = dailyOrders;
-        }
-
-        // --- REPORTING FUNCTIONS ---
+        // --- 1. DASHBOARD REPORTS LOGIC ---
+        
         window.setReportMode = (mode) => {
             reportMode = mode;
-            document.getElementById('btn-report-daily').classList.toggle('bg-white', mode === 'daily');
-            document.getElementById('btn-report-daily').classList.toggle('text-slate-800', mode === 'daily');
-            document.getElementById('btn-report-daily').classList.toggle('shadow-sm', mode === 'daily');
-            document.getElementById('btn-report-daily').classList.toggle('text-slate-500', mode === 'monthly');
-            document.getElementById('btn-report-daily').classList.toggle('hover:text-slate-800', mode === 'monthly');
-            
-            document.getElementById('btn-report-monthly').classList.toggle('bg-white', mode === 'monthly');
-            document.getElementById('btn-report-monthly').classList.toggle('text-slate-800', mode === 'monthly');
-            document.getElementById('btn-report-monthly').classList.toggle('shadow-sm', mode === 'monthly');
-            document.getElementById('btn-report-monthly').classList.toggle('text-slate-500', mode === 'daily');
-            document.getElementById('btn-report-monthly').classList.toggle('hover:text-slate-800', mode === 'daily');
-
-            document.getElementById('report-col-1').textContent = mode === 'daily' ? 'Tanggal' : 'Bulan';
-            updateReport();
+            document.getElementById('btn-report-daily').className = mode === 'daily' ? "px-4 py-1.5 rounded-md text-sm font-bold transition bg-white text-slate-800 shadow-sm" : "px-4 py-1.5 rounded-md text-sm font-bold transition text-slate-500 hover:text-slate-800";
+            document.getElementById('btn-report-monthly').className = mode === 'monthly' ? "px-4 py-1.5 rounded-md text-sm font-bold transition bg-white text-slate-800 shadow-sm" : "px-4 py-1.5 rounded-md text-sm font-bold transition text-slate-500 hover:text-slate-800";
+            document.getElementById('report-col-1').textContent = mode === 'daily' ? "Tanggal" : "Bulan";
+            renderReportTable();
         }
 
-        window.updateReport = () => {
-            const orders = allOrdersCache.filter(o => o.status === 'completed');
+        function renderReportTable() {
+            const validOrders = allOrdersCache.filter(o => ['confirmed', 'completed'].includes(o.status) && o.timestamp);
             const tbody = document.getElementById('report-table-body');
-            const dateFilter = document.getElementById('report-date').value;
-
-            // 1. Grouping
             const grouped = {};
-            orders.forEach(o => {
-                const d = new Date(o.timestamp.seconds * 1000);
-                const key = reportMode === 'daily' ? d.toISOString().split('T')[0] // YYYY-MM-DD
-                                                  : `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; // YYYY-MM
-                
-                // Filter by date input if in daily mode
-                if (reportMode === 'daily' && dateFilter && key !== dateFilter) return;
 
+            validOrders.forEach(o => {
+                const d = new Date(o.timestamp.seconds * 1000);
+                const key = reportMode === 'daily' 
+                    ? d.toISOString().split('T')[0] // YYYY-MM-DD
+                    : `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; // YYYY-MM
+                
                 if(!grouped[key]) grouped[key] = { count: 0, revenue: 0 };
                 grouped[key].count++;
                 grouped[key].revenue += parseInt(o.total);
             });
 
-            // 2. Convert to array and sort desc
+            // Convert to array and sort desc
             const rows = Object.keys(grouped).sort().reverse().map(k => ({key: k, ...grouped[k]}));
+            
             let totalC = 0, totalR = 0;
-
-            // 3. Render
             tbody.innerHTML = rows.map(r => {
                 totalC += r.count;
                 totalR += r.revenue;
-                const displayDate = reportMode === 'daily' ? new Date(r.key).toLocaleDateString('id-ID', {weekday: 'short', day:'numeric', month:'short'}) 
-                                                          : new Date(r.key + '-01').toLocaleDateString('id-ID', {month:'long', year:'numeric'});
+                const displayDate = reportMode === 'daily' 
+                    ? new Date(r.key).toLocaleDateString('id-ID', {weekday: 'short', day:'numeric', month:'short'})
+                    : new Date(r.key + '-01').toLocaleDateString('id-ID', {month:'long', year:'numeric'});
+                
                 return `
                     <tr>
                         <td class="p-4">${displayDate}</td>
@@ -584,8 +548,6 @@
             window.currentReportData = rows;
             window.currentReportTotals = { count: totalC, revenue: totalR };
         }
-        
-        document.getElementById('report-date').addEventListener('change', updateReport);
 
         // --- FUNGSI CETAK LAPORAN (MODE REPORT) ---
         window.printReport = () => {
@@ -593,12 +555,12 @@
             const rows = window.currentReportData || [];
             const totals = window.currentReportTotals || {count:0, revenue:0};
             const dateTitle = reportMode === 'daily' ? "Laporan Harian" : "Laporan Bulanan";
+            
             document.getElementById('print-report-date').textContent = dateTitle;
-            document.getElementById('print-report-time').textContent = 'Cetak: ' + new Date().toLocaleTimeString('id-ID') + ', ' + new Date().toLocaleDateString('id-ID');
-            document.getElementById('print-report-col-1').textContent = reportMode === 'daily' ? 'Tanggal' : 'Bulan';
-
             document.getElementById('print-report-body').innerHTML = rows.map(r => {
-                const displayDate = reportMode === 'daily' ? new Date(r.key).toLocaleDateString('id-ID', {weekday: 'short', day:'numeric', month:'short', year:'numeric'}) : new Date(r.key + '-01').toLocaleDateString('id-ID', {month:'long', year:'numeric'});
+                 const displayDate = reportMode === 'daily' 
+                    ? new Date(r.key).toLocaleDateString('id-ID', {weekday: 'short', day:'numeric', month:'short', year:'numeric'})
+                    : new Date(r.key + '-01').toLocaleDateString('id-ID', {month:'long', year:'numeric'});
                 return `
                     <tr class="border-b border-gray-200">
                         <td class="py-3 px-2">${displayDate}</td>
@@ -608,81 +570,57 @@
                 `;
             }).join('');
             
-            document.getElementById('print-report-total-count').textContent = totals.count;
-            document.getElementById('print-report-total-revenue').textContent = 'Rp ' + totals.revenue.toLocaleString();
-
-            // 2. Panggil cetak
+            document.getElementById('print-report-count').textContent = totals.count;
+            document.getElementById('print-report-revenue').textContent = 'Rp ' + totals.revenue.toLocaleString();
+            document.getElementById('print-timestamp').textContent = new Date().toLocaleString('id-ID');
+            
+            // 2. Aktifkan Mode Cetak Laporan
+            document.body.classList.remove('printing-receipt');
             document.body.classList.add('printing-report');
-            setTimeout(() => { 
-                window.print(); 
-                document.body.classList.remove('printing-report');
-            }, 300);
+
+            // 3. Print
+            window.print();
+
+            // 4. Bersihkan class (opsional, agar tampilan kembali normal jika browser tidak reload)
+            setTimeout(() => document.body.classList.remove('printing-report'), 500);
         }
 
+        function updateDashboardStats(accepted) {
+            const today = new Date().toISOString().split('T')[0];
+            const todayOrders = accepted.filter(o => o.timestamp && new Date(o.timestamp.seconds*1000).toISOString().split('T')[0] === today);
+            document.getElementById('daily-revenue').textContent = 'Rp ' + todayOrders.reduce((a,b) => a + parseInt(b.total), 0).toLocaleString();
+            document.getElementById('daily-orders').textContent = todayOrders.length;
+        }
 
-        // --- MENU MANAGEMENT FUNCTIONS ---
+        // --- 2. MENU LOGIC ---
         function renderMenuTable() {
-            const tbody = document.getElementById('menu-table-body');
-            tbody.innerHTML = allMenu.map(item => `
-                <tr class="hover:bg-slate-50">
-                    <td class="p-4 pl-6">
-                        <div class="w-10 h-10 bg-slate-100 rounded-lg overflow-hidden shrink-0"><img src="${item.imageUrl || `https://placehold.co/100x100?text=${item.name.charAt(0)}`}" class="w-full h-full object-cover"></div>
-                    </td>
-                    <td class="p-4">
-                        <p class="font-bold text-sm">${item.name}</p>
-                        <p class="text-xs text-slate-500">${item.category}</p>
-                    </td>
-                    <td class="p-4 font-bold text-orange-600">Rp ${item.price.toLocaleString()}</td>
-                    <td class="p-4 text-center">
-                        <button onclick="deleteMenu('${item.id}')" class="text-red-500 hover:text-red-700 text-lg"><i class="fas fa-trash"></i></button>
-                    </td>
+            document.getElementById('menu-table-body').innerHTML = allMenu.map(item => `
+                <tr class="border-b border-slate-100 hover:bg-white">
+                    <td class="p-4"><div class="w-10 h-10 rounded bg-slate-100 overflow-hidden border border-slate-200"><img src="${item.imageUrl || `https://placehold.co/100x100?text=${item.name.charAt(0)}`}" class="w-full h-full object-cover"></div></td>
+                    <td class="p-4 font-medium text-slate-800">${item.name}</td>
+                    <td class="p-4">Rp ${parseInt(item.price).toLocaleString()}</td>
+                    <td class="p-4 text-center"><button onclick="window.deleteMenu('${item.id}')" class="text-red-400 hover:text-red-600"><i class="fas fa-trash"></i></button></td>
                 </tr>
             `).join('');
         }
-
-        window.toggleModal = (id) => {
-            document.getElementById(id).classList.toggle('hidden');
-            document.getElementById(id).classList.toggle('flex');
-        }
-
-        document.getElementById('add-menu-form').addEventListener('submit', async (e) => {
+        const menuForm = document.getElementById('add-menu-form');
+        menuForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const btn = e.submitter;
-            const menuForm = e.target;
-            const originalText = btn.innerText;
-            btn.innerText = "Menyimpan...";
-            btn.disabled = true;
-
+            const btn = menuForm.querySelector('button'); const originalText = btn.innerText; btn.innerText = "Menyimpan..."; btn.disabled = true;
             const fd = new FormData(menuForm);
-
             try {
                 await addDoc(collection(db, COL_MENU), {
-                    name: fd.get('name'),
-                    price: parseInt(fd.get('price')),
-                    category: fd.get('category'),
-                    imageUrl: fd.get('imageUrl') || "",
-                    available: true,
-                    createdAt: serverTimestamp()
+                    name: fd.get('name'), price: parseInt(fd.get('price')), category: fd.get('category'),
+                    imageUrl: fd.get('imageUrl') || "", available: true, createdAt: serverTimestamp()
                 });
-                showToast('Menu Tersimpan!', 'success');
-                window.toggleModal('add-menu-modal');
-                menuForm.reset();
-            } catch(err) {
-                showToast("Gagal: " + err.code, 'error');
-            } finally {
-                btn.innerText = originalText;
-                btn.disabled = false;
-            }
+                showToast('Menu Tersimpan!'); window.toggleModal('add-menu-modal'); menuForm.reset();
+            } catch(err) { showToast("Gagal: " + err.code, 'error'); } finally { btn.innerText = originalText; btn.disabled = false; }
         });
 
         // --- 3. INCOMING ORDERS ---
         function renderIncomingOrders(orders) {
             const container = document.getElementById('incoming-orders-grid');
-            if(orders.length === 0) {
-                container.innerHTML = '';
-                document.getElementById('no-incoming').classList.remove('hidden');
-                return;
-            }
+            if(orders.length === 0) { container.innerHTML = ''; document.getElementById('no-incoming').classList.remove('hidden'); return; }
             document.getElementById('no-incoming').classList.add('hidden');
             container.innerHTML = orders.map(order => `
                 <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
@@ -690,174 +628,121 @@
                     <div class="mb-2">
                         <p class="font-bold text-sm">${order.customerName}</p>
                         <p class="text-xs text-slate-500 flex items-center gap-1"><i class="fab fa-whatsapp"></i> ${order.customerPhone || '-'}</p>
-                        <p class="text-xs text-slate-500 mt-0.5"><i class="fas fa-map-marker-alt"></i> ${order.customerAddress || '-'}</p>
                     </div>
-                    <div class="bg-slate-50 p-2 rounded text-xs mb-3 space-y-1">
-                        ${order.items.map(i => `<div class="flex justify-between"><span>${i.qty}x ${i.name}</span><span>${(i.price*i.qty).toLocaleString()}</span></div>`).join('')}
-                        ${order.deliveryFee > 0 ? `<div class="pt-1 mt-1 flex justify-between border-t border-dashed border-slate-200"><span>Ongkir</span><span>Rp ${order.deliveryFee.toLocaleString()}</span></div>` : ''}
-                        <div class="border-t pt-1 mt-1 flex justify-between font-bold"><span>Total</span><span>Rp ${parseInt(order.total).toLocaleString()}</span></div>
-                    </div>
+                    <div class="bg-slate-50 p-2 rounded text-xs mb-3 space-y-1">${order.items.map(i => `<div class="flex justify-between"><span>${i.qty}x ${i.name}</span><span>${(i.price*i.qty).toLocaleString()}</span></div>`).join('')}<div class="border-t pt-1 mt-1 flex justify-between font-bold"><span>Total</span><span>Rp ${parseInt(order.total).toLocaleString()}</span></div></div>
                     <div class="flex gap-2">
-                        <button onclick="updateStatus('${order.id}', 'cancelled')" class="flex-1 py-2 rounded bg-red-50 text-red-500 text-xs font-bold hover:bg-red-100 transition">Tolak</button>
-                        <button onclick="confirmOrder('${order.id}', '${order.customerPhone}', '${order.customerName}', '${order.queueCode}')" class="flex-1 py-2 rounded bg-emerald-500 text-white text-xs font-bold hover:bg-emerald-600 transition">Konfirmasi & WA</button>
+                        <button onclick="updateStatus('${order.id}', 'cancelled')" class="flex-1 py-2 rounded bg-red-50 text-red-500 text-xs font-bold">Tolak</button>
+                        <button onclick="confirmOrder('${order.id}', '${order.customerPhone}', '${order.customerName}', '${order.queueCode}')" class="flex-1 py-2 rounded bg-emerald-500 text-white text-xs font-bold flex items-center justify-center gap-1"><i class="fab fa-whatsapp"></i> Terima</button>
                     </div>
                 </div>
             `).join('');
         }
 
+        // --- 4. ACCEPTED / COMPLETED ORDERS ---
+        function renderAcceptedOrders(orders) {
+            const container = document.getElementById('accepted-orders-grid');
+            const search = document.getElementById('search-accepted').value.toLowerCase();
+            
+            // Filter and sort
+            let filtered = orders.sort((a,b) => b.timestamp?.seconds - a.timestamp?.seconds);
+            if(search) filtered = filtered.filter(o => o.queueCode.toLowerCase().includes(search) || o.customerName.toLowerCase().includes(search));
+            
+            if(filtered.length === 0) { container.innerHTML = ''; document.getElementById('no-accepted').classList.remove('hidden'); return; }
+            document.getElementById('no-accepted').classList.add('hidden');
+            
+            container.innerHTML = filtered.map(o => `
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col h-full">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <span class="font-bold text-lg block">${o.queueCode}</span>
+                            <span class="text-xs text-slate-400">${new Date(o.timestamp?.seconds*1000).toLocaleDateString()}</span>
+                        </div>
+                        <span class="px-2 py-1 rounded text-[10px] font-bold uppercase ${o.source === 'online' ? 'bg-blue-50 text-blue-600' : 'bg-orange-50 text-orange-600'}">${o.source}</span>
+                    </div>
+                    <div class="mb-2 flex-1">
+                        <p class="text-sm font-bold text-slate-700">${o.customerName || 'Pelanggan'}</p>
+                        <p class="text-xs text-slate-500 truncate">${o.items.map(i => i.name).join(', ')}</p>
+                    </div>
+                    <div class="flex justify-between items-center pt-2 border-t border-slate-100 mt-auto">
+                        <span class="font-bold text-emerald-600">Rp ${parseInt(o.total).toLocaleString()}</span>
+                        <button onclick='window.printOrder(${JSON.stringify(o)})' class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg font-bold flex items-center gap-1">
+                            <i class="fas fa-print"></i> Struk
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        document.getElementById('search-accepted').addEventListener('input', () => {
+            const orders = allOrdersCache.filter(o => ['confirmed', 'completed'].includes(o.status));
+            renderAcceptedOrders(orders);
+        });
+
+        // --- GLOBAL ACTIONS ---
         window.confirmOrder = async (id, phone, name, code) => {
+            if(!confirm(`Terima pesanan ${code}?`)) return;
             try {
                 await updateDoc(doc(db, COL_ORDERS, id), { status: 'confirmed' });
-                showToast('Pesanan Diterima!', 'success');
-                
+                showToast('Pesanan Diterima!');
                 let formattedPhone = phone;
                 if(formattedPhone.startsWith('0')) formattedPhone = '62' + formattedPhone.substring(1);
-                const msg = `Halo Kak ${name}, pesanan *${code}* sudah kami terima dan sedang dimasak. Mohon ditunggu! 🧑‍🍳`;
+                const msg = `Halo Kak ${name}, pesanan *${code}* sudah kami terima dan sedang dimasak. Mohon ditunggu! 👩‍🍳`;
                 window.open(`https://wa.me/${formattedPhone}?text=${encodeURIComponent(msg)}`, '_blank');
-            } catch(e) {
-                showToast('Gagal: ' + e.code, 'error');
-            }
+            } catch(e) { showToast('Gagal: ' + e.code, 'error'); }
         };
+        window.updateStatus = async (id, st) => { try { await updateDoc(doc(db, COL_ORDERS, id), { status: st }); showToast(st==='confirmed'?'Pesanan Diterima':'Pesanan Ditolak'); } catch(e) { showToast('Gagal: ' + e.code, 'error'); } };
+        window.deleteMenu = async (id) => { if(confirm("Hapus menu?")) { try { await deleteDoc(doc(db, COL_MENU, id)); showToast("Menu dihapus"); } catch(e) { showToast("Gagal: "+e.code, 'error'); } } };
         
-        window.updateStatus = async (id, st) => {
-            try {
-                await updateDoc(doc(db, COL_ORDERS, id), { status: st });
-                showToast(st==='confirmed'?'Pesanan Diterima':'Pesanan Ditolak', st==='confirmed'?'success':'error');
-            } catch(e) {
-                showToast('Gagal: ' + e.code, 'error');
-            }
-        };
-
-        window.deleteMenu = async (id) => {
-            if(confirm("Hapus menu?")) {
-                try {
-                    await deleteDoc(doc(db, COL_MENU, id));
-                    showToast("Menu dihapus", 'success');
-                } catch(e) {
-                    showToast("Gagal: "+e.code, 'error');
-                }
-            }
-        };
-        
-        // --- 4. CASHIER MODE ---
         function renderCashierGrid() {
             const container = document.getElementById('cashier-grid');
             const search = document.getElementById('cashier-search').value.toLowerCase();
+            
             let filtered = allMenu;
             if(search) {
                 filtered = allMenu.filter(m => m.name.toLowerCase().includes(search));
             }
-            
+
             if(filtered.length === 0) {
                 container.innerHTML = '<p class="text-slate-400 col-span-2 lg:col-span-3 text-center">Menu tidak ditemukan.</p>';
                 return;
             }
-            
+
             container.innerHTML = filtered.map(item => `
                 <button onclick="addToCashierCart('${item.id}')" class="text-left bg-white rounded-xl border border-slate-100 shadow-sm p-3 transition hover:border-orange-500 hover:ring-1 hover:ring-orange-500 active:scale-95">
                     <div class="w-full h-24 bg-slate-100 rounded-lg overflow-hidden mb-2">
                         <img src="${item.imageUrl || `https://placehold.co/100x100?text=${item.name.charAt(0)}`}" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/100x100?text=${item.name.charAt(0)}'">
                     </div>
-                    <p class="text-sm font-bold truncate">${item.name}</p>
-                    <p class="text-xs text-orange-600 font-bold">Rp ${item.price.toLocaleString()}</p>
+                    <p class="text-sm font-bold truncate text-slate-800">${item.name}</p>
+                    <p class="text-xs font-bold text-orange-600">Rp ${parseInt(item.price).toLocaleString()}</p>
                 </button>
             `).join('');
         }
 
-        window.addToCashierCart = (id) => {
-            const item = allMenu.find(m => m.id === id);
-            if (!item) return;
-            const existing = cashierCart.find(c => c.id === id);
-            if (existing) existing.qty++;
-            else cashierCart.push({...item, qty: 1});
-            renderCashierCart();
-        }
-
-        window.updateCashierQty = (id, delta) => {
-            const idx = cashierCart.findIndex(c => c.id === id);
-            if(idx > -1) {
-                cashierCart[idx].qty += delta;
-                if(cashierCart[idx].qty <= 0) cashierCart.splice(idx, 1);
-                renderCashierCart();
-            }
-        }
-
-        function renderCashierCart() {
-            const el = document.getElementById('cashier-cart-items');
-            if(cashierCart.length===0) {
-                el.innerHTML='<div class="text-center text-slate-400 py-10 text-sm">Pilih menu...</div>';
-                document.getElementById('cashier-total').textContent = 'Rp 0';
-                document.getElementById('mobile-cart-badge').classList.add('hidden');
-                return;
-            }
-            
-            const total = cashierCart.reduce((a,b) => a+(b.price*b.qty), 0);
-            const count = cashierCart.reduce((a,b) => a+b.qty, 0);
-
-            document.getElementById('cashier-total').textContent = 'Rp ' + total.toLocaleString();
-            document.getElementById('mobile-cart-badge').textContent = count;
-            document.getElementById('mobile-cart-badge').classList.remove('hidden');
-
-            el.innerHTML = cashierCart.map(item => `
-                <div class="flex items-center gap-3 bg-white border border-slate-200 p-3 rounded-xl shadow-sm">
-                    <div class="flex-1">
-                        <h4 class="font-bold text-sm">${item.name}</h4>
-                        <p class="text-xs text-slate-500">Rp ${item.price.toLocaleString()}</p>
-                    </div>
-                    <div class="flex items-center gap-2 bg-slate-50 rounded-full px-2 py-1">
-                        <button onclick="updateCashierQty('${item.id}', -1)" class="w-5 h-5 bg-white shadow rounded-full text-xs">-</button>
-                        <span class="text-sm font-bold w-4 text-center">${item.qty}</span>
-                        <button onclick="updateCashierQty('${item.id}', 1)" class="w-5 h-5 bg-white shadow rounded-full text-xs">+</button>
-                    </div>
-                </div>
-            `).join('');
-        }
-
+        // Cashier Cart Logic
+        window.addToCashierCart = (id) => { const item = allMenu.find(m => m.id === id); const exist = cashierCart.find(c => c.id === id); if(exist) exist.qty++; else cashierCart.push({...item, qty: 1}); renderCashierCart(); }
         window.clearCashierCart = () => { cashierCart = []; renderCashierCart(); }
-        window.setOrderType = (type) => {
-            currentOrderType = type;
-            document.querySelectorAll('.type-btn').forEach(btn => {
-                const isSelected = btn.dataset.type === type;
-                btn.classList.toggle('bg-orange-50', isSelected);
-                btn.classList.toggle('border-orange-500', isSelected);
-                btn.classList.toggle('text-orange-700', isSelected);
-                btn.classList.toggle('text-slate-600', !isSelected);
-                btn.classList.toggle('border-slate-200', !isSelected);
-                btn.classList.toggle('hover:bg-slate-50', !isSelected);
-            });
+        function renderCashierCart() {
+            const container = document.getElementById('cashier-cart-items'); const badge = document.getElementById('mobile-cart-badge'); const qty = cashierCart.reduce((a,b) => a+b.qty, 0);
+            badge.textContent = qty; badge.classList.toggle('hidden', qty === 0);
+            if(cashierCart.length === 0) { container.innerHTML = '<div class="text-center text-slate-400 py-10 text-sm">Keranjang kosong</div>'; document.getElementById('cashier-total').textContent = "Rp 0"; return; }
+            let total = 0;
+            container.innerHTML = cashierCart.map(item => { total += item.price * item.qty; return `<div class="flex justify-between text-sm border-b pb-2 border-slate-100 last:border-0"><div><span class="font-bold">${item.name}</span> <span class="text-xs text-slate-500">x${item.qty}</span></div><div class="font-bold text-slate-700">${(item.price*item.qty).toLocaleString()}</div></div>`; }).join('');
+            document.getElementById('cashier-total').textContent = 'Rp ' + total.toLocaleString();
         }
+        window.setOrderType = (type) => { currentOrderType = type; document.querySelectorAll('.type-btn').forEach(btn => { if(btn.dataset.type === type) btn.className = "type-btn py-2 rounded-lg border text-sm font-medium transition bg-orange-50 border-orange-500 text-orange-700"; else btn.className = "type-btn py-2 rounded-lg border text-sm font-medium transition text-slate-600 border-slate-200 hover:bg-slate-50"; }); }
         
-        document.getElementById('cashier-search').addEventListener('input', renderCashierGrid);
-
         window.processCashierOrder = async () => {
             if(cashierCart.length === 0) return showToast("Keranjang Kosong!", 'error');
             const custName = document.getElementById('cashier-customer-name').value.trim();
             if(!custName) return showToast("Nama Pelanggan Wajib Diisi!", 'error');
-
             const total = cashierCart.reduce((a,b) => a+(b.price*b.qty), 0);
             const queueCode = generateQueueCode();
-
             try {
-                const order = {
-                    items: cashierCart.map(i => ({ name: i.name, qty: i.qty, price: i.price, id: i.id })),
-                    total,
-                    status: 'completed',
-                    source: 'offline',
-                    type: currentOrderType,
-                    paymentMethod: 'Cash',
-                    customerName: custName,
-                    timestamp: serverTimestamp(),
-                    queueCode
-                };
-                
+                const order = { items: cashierCart, total, status: 'completed', source: 'offline', type: currentOrderType, paymentMethod: 'Cash', customerName: custName, timestamp: serverTimestamp(), queueCode };
                 await addDoc(collection(db, COL_ORDERS), order);
-                showToast("Transaksi Berhasil!", 'success');
+                showToast("Transaksi Berhasil!");
                 window.printOrder({...order, timestamp: {seconds: Date.now()/1000}, deliveryFee: 0});
-                clearCashierCart();
-                document.getElementById('cashier-customer-name').value = "";
-            } catch(e) {
-                showToast("Gagal: " + e.code, 'error');
-            }
+                clearCashierCart(); document.getElementById('cashier-customer-name').value = "";
+            } catch(e) { showToast("Gagal: " + e.code, 'error'); }
         }
 
         // --- FUNGSI CETAK STRUK (MODE RECEIPT) ---
@@ -865,108 +750,73 @@
             // 1. Isi Data Struk
             document.getElementById('print-queue').textContent = o.queueCode;
             document.getElementById('print-name').textContent = (o.customerName || 'NONAME');
-            document.getElementById('print-type').textContent = (o.type || 'POS').toUpperCase();
-            document.getElementById('print-time').textContent = new Date(o.timestamp.seconds * 1000).toLocaleDateString('id-ID', {day:'numeric', month:'short', year:'numeric'}) + ' ' + new Date(o.timestamp.seconds * 1000).toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
-
-            const subtotal = o.items.reduce((a,b) => a+(b.price*b.qty), 0);
-            const fee = o.deliveryFee || 0;
-            const total = subtotal + fee;
-
-            document.getElementById('print-items').innerHTML = o.items.map(i => {
-                return `<div class="flex justify-between"><span>${i.qty}x ${i.name}</span><span>${(i.price*i.qty).toLocaleString()}</span></div>`;
-            }).join('');
+            document.getElementById('print-type').textContent = (o.type || 'ONLINE').toUpperCase();
+            document.getElementById('print-time').textContent = new Date(o.timestamp.seconds*1000).toLocaleString('id-ID');
             
-            document.getElementById('print-subtotal').textContent = subtotal.toLocaleString();
-            document.getElementById('print-fee').textContent = fee.toLocaleString();
-            document.getElementById('print-total').textContent = total.toLocaleString();
-
-            // 2. Panggil cetak
-            document.body.classList.add('printing-receipt');
-            setTimeout(() => { 
-                window.print(); 
-                document.body.classList.remove('printing-receipt');
-            }, 300);
-        }
-
-        // --- ACCEPTED ORDERS FUNCTIONS ---
-        function renderAcceptedOrders() {
-            const container = document.getElementById('accepted-orders-grid');
-            const search = document.getElementById('search-accepted').value.toLowerCase();
-            
-            const filtered = allOrdersCache.filter(o => 
-                o.queueCode.toLowerCase().includes(search) || 
-                o.customerName.toLowerCase().includes(search)
-            );
-
-            if(filtered.length === 0) {
-                container.innerHTML = '';
-                document.getElementById('no-accepted').classList.remove('hidden');
-                return;
-            }
-            document.getElementById('no-accepted').classList.add('hidden');
-
-            container.innerHTML = filtered.map(order => {
-                const statusClass = order.status === 'confirmed' ? 'bg-orange-100 text-orange-600' : 
-                                    order.status === 'completed' ? 'bg-emerald-100 text-emerald-600' :
-                                    'bg-red-100 text-red-600';
-                const statusText = order.status === 'confirmed' ? 'Diproses' : 
-                                   order.status === 'completed' ? 'Selesai' :
-                                   'Dibatalkan';
-                const timeString = new Date(order.timestamp.seconds * 1000).toLocaleDateString('id-ID', {day:'numeric', month:'short', hour:'2-digit', minute:'2-digit'});
-
-                return `
-                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-                        <div class="flex justify-between mb-2">
-                            <span class="font-bold text-lg">${order.queueCode}</span>
-                            <span class="text-xs ${statusClass} px-2 py-0.5 rounded-full font-bold">${statusText}</span>
-                        </div>
-                        <p class="font-bold text-sm">${order.customerName} (${order.type})</p>
-                        <p class="text-xs text-slate-500 mb-2">${timeString} (${order.paymentMethod})</p>
-                        <div class="bg-slate-50 p-2 rounded text-xs mb-3 space-y-1">
-                            ${order.items.map(i => `<div class="flex justify-between"><span>${i.qty}x ${i.name}</span><span>${(i.price*i.qty).toLocaleString()}</span></div>`).join('')}
-                            ${order.deliveryFee > 0 ? `<div class="pt-1 mt-1 flex justify-between border-t border-dashed border-slate-200"><span>Ongkir</span><span>Rp ${order.deliveryFee.toLocaleString()}</span></div>` : ''}
-                            <div class="border-t pt-1 mt-1 flex justify-between font-bold"><span>Total</span><span>Rp ${parseInt(order.total).toLocaleString()}</span></div>
-                        </div>
-                        <div class="flex gap-2">
-                            ${order.status !== 'completed' ? `<button onclick="updateStatus('${order.id}', 'completed')" class="flex-1 py-2 rounded bg-emerald-50 text-emerald-500 text-xs font-bold hover:bg-emerald-100 transition">Selesaikan</button>` : ''}
-                            <button onclick="printOrder({
-                                queueCode: '${order.queueCode}', 
-                                customerName: '${order.customerName}', 
-                                type: '${order.type}', 
-                                items: JSON.parse(decodeURIComponent('${encodeURIComponent(JSON.stringify(order.items))}')),
-                                deliveryFee: ${order.deliveryFee || 0},
-                                timestamp: {seconds: ${order.timestamp.seconds}}
-                            })" class="${order.status !== 'completed' ? 'flex-1' : 'w-full'} py-2 rounded bg-slate-100 text-slate-700 text-xs font-bold hover:bg-slate-200 transition"><i class="fas fa-print"></i> Cetak Struk</button>
-                        </div>
+            // Rincian Belanja yang Detail
+            document.getElementById('print-items').innerHTML = o.items.map(i => `
+                <div class="mb-1 text-[9px]">
+                    <div class="font-bold">${i.name}</div>
+                    <div class="flex justify-between">
+                        <span>${i.qty} x ${parseInt(i.price).toLocaleString()}</span>
+                        <span>${(i.price*i.qty).toLocaleString()}</span>
                     </div>
-                `;
-            }).join('');
+                </div>
+            `).join('');
+            
+            const subtotal = o.total - (o.deliveryFee || 0);
+            document.getElementById('print-subtotal').textContent = subtotal.toLocaleString();
+            document.getElementById('print-fee').textContent = (o.deliveryFee||0).toLocaleString();
+            document.getElementById('print-total').textContent = parseInt(o.total).toLocaleString();
+            
+            // 2. Aktifkan Mode Cetak Struk
+            document.body.classList.remove('printing-report');
+            document.body.classList.add('printing-receipt');
+
+            // 3. Print
+            window.print();
+
+            // 4. Bersihkan class
+            setTimeout(() => document.body.classList.remove('printing-receipt'), 500);
         }
 
-        document.getElementById('search-accepted').addEventListener('input', renderAcceptedOrders);
+        document.getElementById('cashier-search').addEventListener('input', renderCashierGrid);
+        window.toggleModal = (id) => { const el=document.getElementById(id); el.classList.toggle('hidden'); el.classList.toggle('flex'); }
+        
+        // --- PERBAIKAN 1: LOGIKA BUKA/TUTUP SIDEBAR & PANEL KASIR ---
 
-        // --- NAVIGATION & LAYOUT ---
-        window.closeAllPopups = () => {
+        // Fungsi baru untuk menutup SEMUA popup/overlay
+        function closeAllPopups() {
             const sidebar = document.getElementById('sidebar');
-            const cashierPanel = document.getElementById('cashier-panel');
             const overlay = document.getElementById('mobile-overlay');
-
-            // Close Sidebar
-            if (!sidebar.classList.contains('sidebar-closed')) {
-                sidebar.classList.add('sidebar-closed');
+            const cashierPanel = document.getElementById('cashier-panel');
+            
+            // Cek dan tutup sidebar
+            if (!sidebar.classList.contains('sidebar-closed')) { 
+                sidebar.classList.add('sidebar-closed'); 
             }
+            
+            // Cek dan tutup panel kasir
+            if (cashierPanel && !cashierPanel.classList.contains('translate-y-full')) { 
+                cashierPanel.classList.add('translate-y-full'); 
+            }
+            // Selalu sembunyikan overlay
+            overlay.classList.add('hidden');
+        }
+        window.closeAllPopups = closeAllPopups;
 
-            // Close Cashier Panel Mobile
-            if (!cashierPanel.classList.contains('translate-y-full')) {
+        // Modifikasi toggleSidebar agar "pintar"
+        window.toggleSidebar = () => { 
+            const sb = document.getElementById('sidebar'); 
+            const ov = document.getElementById('mobile-overlay'); 
+            const cashierPanel = document.getElementById('cashier-panel');
+            
+            // Jika panel kasir terbuka, tutup dulu
+            if (cashierPanel && !cashierPanel.classList.contains('translate-y-full')) {
                 cashierPanel.classList.add('translate-y-full');
             }
             
-            overlay.classList.add('hidden');
-        }
-
-        window.toggleSidebar = () => {
-            const sb = document.getElementById('sidebar'); 
-            const ov = document.getElementById('mobile-overlay'); 
+            // Lakukan toggle seperti biasa untuk sidebar & overlay
             sb.classList.toggle('sidebar-closed'); 
             ov.classList.toggle('hidden'); 
         }
@@ -995,16 +845,11 @@
                 e.classList.add('text-slate-300'); 
             }); 
             document.getElementById('nav-'+id).classList.add('bg-white/10', 'text-white'); 
-            document.getElementById('page-title').textContent = document.getElementById('nav-'+id).textContent.trim().split('&')[0].trim();
             
             // Jika pindah tab, selalu tutup popup
             if(window.innerWidth < 768) {
                 closeAllPopups();
             } 
-            
-            // Re-render cashier grid if switching to it
-            if(id === 'cashier') renderCashierGrid();
-            if(id === 'accepted') renderAcceptedOrders();
         }
         
         switchTab('dashboard');
